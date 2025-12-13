@@ -1,68 +1,99 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const weekData = [
-  { day: "Mon", study: 3.5, code: 2 },
-  { day: "Tue", study: 4, code: 3 },
-  { day: "Wed", study: 2.5, code: 4 },
-  { day: "Thu", study: 5, code: 2.5 },
-  { day: "Fri", study: 3, code: 5 },
-  { day: "Sat", study: 2, code: 3.5 },
-  { day: "Sun", study: 4.5, code: 2 },
-];
+// Generate 16 weeks of mock activity data (like GitHub)
+const generateActivityData = () => {
+  const weeks = [];
+  for (let w = 0; w < 16; w++) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      // Random activity level 0-4
+      week.push(Math.floor(Math.random() * 5));
+    }
+    weeks.push(week);
+  }
+  return weeks;
+};
+
+const activityData = generateActivityData();
+const days = ["Mon", "", "Wed", "", "Fri", "", ""];
+
+const getActivityColor = (level: number) => {
+  switch (level) {
+    case 0:
+      return "bg-muted";
+    case 1:
+      return "bg-widget-study/30";
+    case 2:
+      return "bg-widget-study/50";
+    case 3:
+      return "bg-widget-study/75";
+    case 4:
+      return "bg-widget-study";
+    default:
+      return "bg-muted";
+  }
+};
 
 export function WeeklyChart() {
-  const maxValue = Math.max(...weekData.map((d) => d.study + d.code));
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4 }}
       className={cn(
-        "rounded-3xl p-6 bg-card border border-border/50",
-        "shadow-card hover:shadow-soft transition-all duration-300"
+        "rounded-3xl p-6 bg-card border border-border/50"
       )}
     >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-foreground">Weekly Activity</h3>
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-widget-study" />
-            <span className="text-muted-foreground">Study</span>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-foreground">Activity</h3>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Less</span>
+          <div className="flex gap-0.5">
+            {[0, 1, 2, 3, 4].map((level) => (
+              <div
+                key={level}
+                className={cn("w-3 h-3 rounded-sm", getActivityColor(level))}
+              />
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-widget-code" />
-            <span className="text-muted-foreground">Code</span>
-          </div>
+          <span>More</span>
         </div>
       </div>
 
-      <div className="flex items-end justify-between gap-2 h-32">
-        {weekData.map((data, index) => {
-          const studyHeight = (data.study / maxValue) * 100;
-          const codeHeight = (data.code / maxValue) * 100;
-
-          return (
-            <div key={data.day} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full flex flex-col gap-0.5" style={{ height: 100 }}>
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${codeHeight}%` }}
-                  transition={{ duration: 0.5, delay: 0.5 + index * 0.05 }}
-                  className="w-full bg-widget-code rounded-t-md"
-                />
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${studyHeight}%` }}
-                  transition={{ duration: 0.5, delay: 0.5 + index * 0.05 }}
-                  className="w-full bg-widget-study rounded-t-md"
-                />
-              </div>
-              <span className="text-xs text-muted-foreground mt-2">{data.day}</span>
+      <div className="flex gap-1">
+        {/* Day labels */}
+        <div className="flex flex-col gap-0.5 pr-2 pt-0">
+          {days.map((day, i) => (
+            <div key={i} className="h-3 text-[10px] text-muted-foreground flex items-center">
+              {day}
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Activity grid */}
+        <div className="flex gap-0.5 overflow-hidden flex-1">
+          {activityData.map((week, weekIndex) => (
+            <div key={weekIndex} className="flex flex-col gap-0.5">
+              {week.map((level, dayIndex) => (
+                <motion.div
+                  key={dayIndex}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ 
+                    duration: 0.2, 
+                    delay: 0.3 + weekIndex * 0.02 + dayIndex * 0.01 
+                  }}
+                  className={cn(
+                    "w-3 h-3 rounded-sm transition-colors",
+                    getActivityColor(level)
+                  )}
+                  title={`Activity level: ${level}`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </motion.div>
   );
