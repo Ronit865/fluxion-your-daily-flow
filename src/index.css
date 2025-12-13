@@ -55,9 +55,9 @@
     --nav-inner: 0 0% 8%;
     --nav-text: 0 0% 100%;
 
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -4px hsl(30 20% 20% / 0.08);
-    --shadow-card: 0 2px 12px -2px hsl(30 20% 20% / 0.06);
+    /* Shadows - minimal, no glow */
+    --shadow-soft: 0 1px 3px 0 hsl(30 20% 20% / 0.04);
+    --shadow-card: 0 1px 2px 0 hsl(30 20% 20% / 0.03);
 
     /* Sidebar */
     --sidebar-background: 40 30% 96%;
@@ -119,12 +119,12 @@
     --nav-inner: 0 0% 5%;
     --nav-text: 0 0% 100%;
 
-    /* Shadows & Glows */
-    --shadow-soft: 0 4px 30px -4px hsl(0 0% 0% / 0.5);
-    --shadow-card: 0 2px 20px -2px hsl(0 0% 0% / 0.4);
-    --glow-orange: 0 0 40px hsl(24 100% 55% / 0.3);
-    --glow-green: 0 0 40px hsl(145 80% 50% / 0.3);
-    --glow-blue: 0 0 40px hsl(200 100% 55% / 0.3);
+    /* Shadows - minimal, no glow */
+    --shadow-soft: none;
+    --shadow-card: none;
+    --glow-orange: none;
+    --glow-green: none;
+    --glow-blue: none;
 
     /* Sidebar */
     --sidebar-background: 0 0% 6%;
