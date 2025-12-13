@@ -2,95 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light Mode - Warm Planner Aesthetic */
+    --background: 40 33% 96%;
+    --foreground: 30 10% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 40 30% 98%;
+    --card-foreground: 30 10% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 40 30% 98%;
+    --popover-foreground: 30 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 24 80% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 30 10% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 40 15% 90%;
+    --muted-foreground: 30 8% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 85 35% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 24 80% 50%;
 
-    --radius: 0.5rem;
+    --radius: 1.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Light mode accent palette */
+    --accent-orange: 24 90% 55%;
+    --accent-olive: 85 35% 45%;
+    --accent-blue: 210 45% 55%;
+    --accent-brown: 25 30% 40%;
+    --accent-clay: 15 50% 55%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Widget colors */
+    --widget-study: 85 35% 45%;
+    --widget-code: 210 45% 55%;
+    --widget-tasks: 24 90% 55%;
+    --widget-focus: 15 50% 55%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Navbar specific */
+    --nav-outer: 45 30% 92%;
+    --nav-inner: 0 0% 8%;
+    --nav-text: 0 0% 100%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(30 20% 20% / 0.08);
+    --shadow-card: 0 2px 12px -2px hsl(30 20% 20% / 0.06);
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar */
+    --sidebar-background: 40 30% 96%;
+    --sidebar-foreground: 30 10% 25%;
+    --sidebar-primary: 24 80% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 20% 92%;
+    --sidebar-accent-foreground: 30 10% 25%;
+    --sidebar-border: 40 20% 88%;
+    --sidebar-ring: 24 80% 50%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark Mode - Performance Widget Aesthetic */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 24 100% 55%;
+    --primary-foreground: 0 0% 5%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 145 80% 50%;
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 24 100% 55%;
+
+    /* Dark mode accent palette */
+    --accent-orange: 24 100% 55%;
+    --accent-green: 145 80% 50%;
+    --accent-blue: 200 100% 55%;
+    --accent-yellow: 50 100% 55%;
+    --accent-red: 0 85% 55%;
+    --accent-cyan: 185 100% 50%;
+
+    /* Widget colors */
+    --widget-study: 145 80% 50%;
+    --widget-code: 200 100% 55%;
+    --widget-tasks: 24 100% 55%;
+    --widget-focus: 50 100% 55%;
+
+    /* Navbar specific */
+    --nav-outer: 45 25% 88%;
+    --nav-inner: 0 0% 5%;
+    --nav-text: 0 0% 100%;
+
+    /* Shadows & Glows */
+    --shadow-soft: 0 4px 30px -4px hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 2px 20px -2px hsl(0 0% 0% / 0.4);
+    --glow-orange: 0 0 40px hsl(24 100% 55% / 0.3);
+    --glow-green: 0 0 40px hsl(145 80% 50% / 0.3);
+    --glow-blue: 0 0 40px hsl(200 100% 55% / 0.3);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 24 100% 55%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 24 100% 55%;
   }
 }
 
@@ -100,6 +144,143 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Space Grotesk', sans-serif;
   }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Widget card styles */
+  .widget-card {
+    @apply rounded-3xl p-6 transition-all duration-300;
+  }
+
+  .widget-card-light {
+    @apply bg-card shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)];
+  }
+
+  .widget-card-dark {
+    @apply bg-card border border-border/50;
+  }
+
+  /* Metric number styles */
+  .metric-number {
+    @apply font-mono font-bold tracking-tight;
+  }
+
+  .metric-number-lg {
+    @apply text-5xl md:text-6xl;
+  }
+
+  .metric-number-md {
+    @apply text-3xl md:text-4xl;
+  }
+
+  .metric-number-sm {
+    @apply text-xl md:text-2xl;
+  }
+
+  /* Glow effects for dark mode */
+  .glow-orange {
+    box-shadow: var(--glow-orange);
+  }
+
+  .glow-green {
+    box-shadow: var(--glow-green);
+  }
+
+  .glow-blue {
+    box-shadow: var(--glow-blue);
+  }
+
+  /* Progress ring animation */
+  .progress-ring {
+    transition: stroke-dashoffset 0.5s ease-out;
+  }
+
+  /* Navbar cut-in effect */
+  .nav-cutout {
+    clip-path: polygon(
+      0 0,
+      2% 0,
+      4% 100%,
+      96% 100%,
+      98% 0,
+      100% 0,
+      100% 100%,
+      0 100%
+    );
+  }
+}
+
+@layer utilities {
+  /* Animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes count-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out forwards;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-count-up {
+    animation: count-up 0.6s ease-out forwards;
+  }
+
+  /* Stagger children */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
 }
