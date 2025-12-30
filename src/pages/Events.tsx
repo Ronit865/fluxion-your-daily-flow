@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, Users, Clock, Search, Loader2, CalendarDays, Check } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, Search, Loader2, CalendarDays, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,13 +18,15 @@ interface Event {
     location?: string;
     type?: string;
     category?: string;
-    participants: any[]; // Changed from string[] to any[] to handle both objects and strings
+    participants: any[];
     maxAttendees?: number;
     image?: string;
     isactive: boolean;
     createdAt: string;
     updatedAt: string;
 }
+
+const ITEMS_PER_PAGE = 6;
 
 export default function Events() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -33,6 +35,8 @@ export default function Events() {
     const [error, setError] = useState<string | null>(null);
     const [joiningEvent, setJoiningEvent] = useState<string | null>(null);
     const [registeredEvents, setRegisteredEvents] = useState<Set<string>>(new Set());
+    const [activeEventPage, setActiveEventPage] = useState(0);
+    const [pastEventPage, setPastEventPage] = useState(0);
 
     useEffect(() => {
         fetchEvents();
@@ -45,14 +49,8 @@ export default function Events() {
             const response = await eventService.getEvents();
 
             if (response.success) {
-                // Filter only active events
-                const activeEvents = response.data.filter(
-                    (event: Event) => event.isactive
-                );
-                setEvents(activeEvents);
-                
-                // Get current user to check registered events
-                await checkRegisteredEvents(activeEvents);
+                setEvents(response.data);
+                await checkRegisteredEvents(response.data);
             } else {
                 setError(response.message || "Failed to fetch events");
                 toast.error("Failed to fetch events");
@@ -72,14 +70,10 @@ export default function Events() {
             
             if (userResponse.success && userResponse.data) {
                 const userId = userResponse.data._id;
-                console.log("Current User ID:", userId);
                 
                 const registered = new Set<string>();
                 events.forEach(event => {
-                    console.log(`Event ${event.title} participants:`, event.participants);
-                    // Check if participants array contains objects or strings
                     const isRegistered = event.participants.some((participant: any) => {
-                        // Handle both object format {_id: "..."} and string format
                         const participantId = typeof participant === 'string' 
                             ? participant 
                             : participant._id || participant.userId || participant.user;
@@ -91,7 +85,6 @@ export default function Events() {
                     }
                 });
                 
-                console.log("Registered Events:", Array.from(registered));
                 setRegisteredEvents(registered);
             }
         } catch (error) {
@@ -99,7 +92,6 @@ export default function Events() {
         }
     };
 
-    // Optional: Add a helper function to get userId once to avoid repetition
     const getCurrentUserId = async (): Promise<string | undefined> => {
         try {
             const userResponse = await userService.getCurrentUser();
@@ -123,20 +115,12 @@ export default function Events() {
             const response = await eventService.joinEvent(eventId);
 
             if (response.success) {
-                // Enhanced success toast with green styling
                 toast.success("Successfully joined the event!", {
-                    style: {
-                        background: '#10b981',
-                        color: '#ffffff',
-                        border: '1px solid #059669',
-                    },
-                    duration: 4000,
                     description: "You will receive event updates via email.",
                 });
                 
                 setRegisteredEvents(prev => new Set(prev).add(eventId));
                 
-                // Update the event's participants count locally
                 setEvents(prevEvents => 
                     prevEvents.map(event => 
                         event._id === eventId 
@@ -168,9 +152,7 @@ export default function Events() {
             const response = await eventService.leaveEvent(eventId);
 
             if (response.success) {
-                toast.success("Successfully left the event", {
-                    duration: 3000,
-                });
+                toast.success("Successfully left the event");
                 
                 setRegisteredEvents(prev => {
                     const newSet = new Set(prev);
@@ -178,7 +160,6 @@ export default function Events() {
                     return newSet;
                 });
                 
-                // Update the event's participants count locally
                 setEvents(prevEvents => 
                     prevEvents.map(event => 
                         event._id === eventId 
@@ -204,44 +185,171 @@ export default function Events() {
         const date = new Date(dateString);
         return date.toLocaleDateString("en-US", {
             year: "numeric",
-            month: "long",
+            month: "short",
             day: "numeric",
         });
     };
 
-    const getStatusBadge = (isActive: boolean) => {
-        if (isActive) {
-            return <Badge className="bg-success/10 text-success border-success/20">Active</Badge>;
-        } else {
-            return <Badge variant="outline" className="border-warning text-warning">Inactive</Badge>;
-        }
-    };
-
+    // Filter and categorize events
     const filteredEvents = events.filter((event) =>
         event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (event.category && event.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
         event.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const activeEvents = filteredEvents.filter(event => event.isactive);
+    const pastEvents = filteredEvents.filter(event => !event.isactive);
+
+    // Pagination
+    const activeEventsTotalPages = Math.ceil(activeEvents.length / ITEMS_PER_PAGE);
+    const pastEventsTotalPages = Math.ceil(pastEvents.length / ITEMS_PER_PAGE);
+
+    const paginatedActiveEvents = activeEvents.slice(
+        activeEventPage * ITEMS_PER_PAGE,
+        (activeEventPage + 1) * ITEMS_PER_PAGE
+    );
+
+    const paginatedPastEvents = pastEvents.slice(
+        pastEventPage * ITEMS_PER_PAGE,
+        (pastEventPage + 1) * ITEMS_PER_PAGE
+    );
+
+    const EventCard = ({ event, index }: { event: Event; index: number }) => (
+        <Card 
+            key={event._id} 
+            className="overflow-hidden border-border/30 bg-card animate-fade-in group flex flex-col h-full"
+            style={{ animationDelay: `${index * 100}ms` }}
+        >
+            <CardHeader className="pb-2 pt-5 px-5">
+                <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                    {event.title}
+                </CardTitle>
+            </CardHeader>
+
+            <CardContent className="flex-1 flex flex-col px-5 pb-5">
+                {/* Category Badge */}
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {event.category && (
+                        <Badge variant="secondary" className="text-xs font-medium">
+                            {event.category}
+                        </Badge>
+                    )}
+                </div>
+
+                {/* Description */}
+                <p className="text-foreground/80 text-sm leading-relaxed line-clamp-2 mb-4">
+                    {event.description}
+                </p>
+                
+                {/* Event Details Grid */}
+                <div className="grid grid-cols-2 gap-3 text-sm flex-1 mb-4">
+                    <div className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="text-foreground font-medium truncate">{formatDate(event.date)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="text-foreground font-medium truncate">{event.time || "TBD"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="text-foreground font-medium truncate">{event.location || "TBD"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="text-foreground font-medium truncate">
+                            {event.participants.length}{event.maxAttendees && `/${event.maxAttendees}`}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Separator */}
+                <div className="border-t border-border/50 -mx-5 mb-4"></div>
+
+                {/* Action Button */}
+                <Button
+                    size="sm"
+                    className="w-full h-10 font-medium"
+                    onClick={() => registeredEvents.has(event._id) 
+                        ? handleLeaveEvent(event._id) 
+                        : handleJoinEvent(event._id)
+                    }
+                    disabled={
+                        joiningEvent === event._id ||
+                        (!registeredEvents.has(event._id) && event.maxAttendees && event.participants.length >= event.maxAttendees)
+                    }
+                    variant={registeredEvents.has(event._id) ? "outline" : "default"}
+                >
+                    {joiningEvent === event._id ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            {registeredEvents.has(event._id) ? "Leaving..." : "Joining..."}
+                        </>
+                    ) : registeredEvents.has(event._id) ? (
+                        <>
+                            <Check className="w-4 h-4 mr-2" />
+                            Leave Event
+                        </>
+                    ) : (event.maxAttendees && event.participants.length >= event.maxAttendees) ? (
+                        "Event Full"
+                    ) : (
+                        "Join Event"
+                    )}
+                </Button>
+            </CardContent>
+        </Card>
+    );
+
+    const PaginationControls = ({ 
+        currentPage, 
+        totalPages, 
+        onPrevious, 
+        onNext 
+    }: { 
+        currentPage: number; 
+        totalPages: number; 
+        onPrevious: () => void; 
+        onNext: () => void; 
+    }) => (
+        <div className="flex items-center justify-center gap-4 mt-6">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={onPrevious}
+                disabled={currentPage === 0}
+                className="gap-1"
+            >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+            </span>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={onNext}
+                disabled={currentPage >= totalPages - 1}
+                className="gap-1"
+            >
+                Next
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
+    );
+
     if (loading) {
         return (
             <div className="space-y-6 animate-fade-in">
-                {/* Header Skeleton */}
                 <div>
                     <Skeleton className="h-9 w-48 mb-2" />
                     <Skeleton className="h-5 w-96" />
                 </div>
-
-                {/* Search Skeleton */}
                 <Skeleton className="h-10 max-w-md" />
-
-                {/* Events Count Skeleton */}
                 <Skeleton className="h-7 w-56" />
-
-                {/* Events Grid Skeleton */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(6)].map((_, i) => (
-                        <Skeleton key={i} className="h-96 rounded-lg" />
+                        <Skeleton key={i} className="h-80 rounded-lg" />
                     ))}
                 </div>
             </div>
@@ -252,12 +360,8 @@ export default function Events() {
         return (
             <div className="space-y-6 animate-fade-in">
                 <div>
-                    <h1 className="text-3xl font-bold gradient-text mb-2">
-                        Events
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Discover upcoming events and connect with fellow alumni
-                    </p>
+                    <h1 className="text-3xl font-bold gradient-text mb-2">Events</h1>
+                    <p className="text-muted-foreground">Discover upcoming events and connect with fellow alumni</p>
                 </div>
                 <div className="text-center py-12">
                     <Card className="border-destructive/50 bg-destructive/10">
@@ -274,15 +378,11 @@ export default function Events() {
     }
 
     return (
-        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        <div className="space-y-6 sm:space-y-8 animate-fade-in">
             {/* Header */}
             <div>
-                <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-1 sm:mb-2">
-                    Alumni Events
-                </h1>
-                <p className="text-sm sm:text-base text-muted-foreground">
-                    Discover upcoming events and connect with fellow alumni
-                </p>
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-1 sm:mb-2">Alumni Events</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">Discover upcoming events and connect with fellow alumni</p>
             </div>
 
             {/* Search */}
@@ -296,136 +396,75 @@ export default function Events() {
                 />
             </div>
 
-            {/* Events Count */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                    Upcoming Events ({filteredEvents.length})
-                </h2>
-            </div>
+            {/* Active Events Section */}
+            <div>
+                <div className="flex items-center gap-2 mb-4">
+                    <CalendarDays className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-semibold text-foreground">
+                        Active Events ({activeEvents.length})
+                    </h2>
+                </div>
 
-            {/* Events Grid */}
-            {filteredEvents.length === 0 ? (
-                <div className="text-center py-12">
+                {activeEvents.length === 0 ? (
                     <Card className="border-card-border/50">
-                        <CardContent className="pt-12 pb-12">
+                        <CardContent className="pt-12 pb-12 text-center">
                             <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <p className="text-muted-foreground">
-                                {searchQuery
-                                    ? "No events found matching your search."
-                                    : "No active events available."}
-                            </p>
+                            <p className="text-muted-foreground">No active events available.</p>
                         </CardContent>
                     </Card>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {paginatedActiveEvents.map((event, index) => (
+                                <EventCard key={event._id} event={event} index={index} />
+                            ))}
+                        </div>
+                        {activeEventsTotalPages > 1 && (
+                            <PaginationControls
+                                currentPage={activeEventPage}
+                                totalPages={activeEventsTotalPages}
+                                onPrevious={() => setActiveEventPage(p => Math.max(0, p - 1))}
+                                onNext={() => setActiveEventPage(p => Math.min(activeEventsTotalPages - 1, p + 1))}
+                            />
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* Past Events Section */}
+            <div>
+                <div className="flex items-center gap-2 mb-4">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="text-xl font-semibold text-foreground">
+                        Past Events ({pastEvents.length})
+                    </h2>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredEvents.map((event, index) => (
-                        <Card 
-                            key={event._id} 
-                            className="overflow-hidden border-border/30 bg-card animate-fade-in group flex flex-col h-full"
-                            style={{ animationDelay: `${index * 100}ms` }}
-                        >
-                            {/* Card Header with Title */}
-                            <CardHeader className="pb-2 pt-5 px-5">
-                                <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                                    {event.title}
-                                </CardTitle>
-                            </CardHeader>
 
-                            <CardContent className="flex-1 flex flex-col px-5 pb-5">
-                                {/* Status Badges */}
-                                <div className="flex items-center gap-2 flex-wrap mb-3">
-                                    {getStatusBadge(event.isactive)}
-                                    {event.category && (
-                                        <Badge variant="secondary" className="text-xs font-medium">
-                                            {event.category}
-                                        </Badge>
-                                    )}
-                                </div>
-
-                                {/* Description */}
-                                <p className="text-foreground/80 text-sm leading-relaxed line-clamp-2 mb-4">
-                                    {event.description}
-                                </p>
-                                
-                                {/* Event Details with better contrast */}
-                                <div className="space-y-2.5 text-sm flex-1 mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
-                                            <CalendarDays className="h-4 w-4 text-primary" />
-                                        </div>
-                                        <span className="text-foreground font-medium">{formatDate(event.date)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
-                                            <Clock className="h-4 w-4 text-primary" />
-                                        </div>
-                                        <span className="text-foreground font-medium">{event.time || "TBD"}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
-                                            <MapPin className="h-4 w-4 text-primary" />
-                                        </div>
-                                        <span className="text-foreground font-medium truncate">{event.location || "TBD"}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
-                                            <Users className="h-4 w-4 text-primary" />
-                                        </div>
-                                        <span className="text-foreground font-medium">
-                                            {event.participants.length} 
-                                            {event.maxAttendees && `/${event.maxAttendees}`} participants
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Separator */}
-                                <div className="border-t border-border/50 -mx-5 mb-4"></div>
-
-                                {/* Action Button */}
-                                <Button
-                                    size="sm"
-                                    className="w-full h-10 font-medium"
-                                    onClick={() => registeredEvents.has(event._id) 
-                                        ? handleLeaveEvent(event._id) 
-                                        : handleJoinEvent(event._id)
-                                    }
-                                    disabled={
-                                        joiningEvent === event._id ||
-                                        (!registeredEvents.has(event._id) && event.maxAttendees && event.participants.length >= event.maxAttendees)
-                                    }
-                                    variant={registeredEvents.has(event._id) ? "outline" : "default"}
-                                >
-                                    {joiningEvent === event._id ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                            {registeredEvents.has(event._id) ? "Leaving..." : "Joining..."}
-                                        </>
-                                    ) : registeredEvents.has(event._id) ? (
-                                        <>
-                                            <Check className="w-4 h-4 mr-2" />
-                                            Leave Event
-                                        </>
-                                    ) : (event.maxAttendees && event.participants.length >= event.maxAttendees) ? (
-                                        "Event Full"
-                                    ) : (
-                                        "Join Event"
-                                    )}
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
-
-            {/* Load More */}
-            {filteredEvents.length > 9 && (
-                <div className="text-center pt-6">
-                    <Button variant="outline" size="lg" className="border-card-border/50">
-                        Load More Events
-                    </Button>
-                </div>
-            )}
+                {pastEvents.length === 0 ? (
+                    <Card className="border-card-border/50">
+                        <CardContent className="pt-12 pb-12 text-center">
+                            <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <p className="text-muted-foreground">No past events to display.</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {paginatedPastEvents.map((event, index) => (
+                                <EventCard key={event._id} event={event} index={index} />
+                            ))}
+                        </div>
+                        {pastEventsTotalPages > 1 && (
+                            <PaginationControls
+                                currentPage={pastEventPage}
+                                totalPages={pastEventsTotalPages}
+                                onPrevious={() => setPastEventPage(p => Math.max(0, p - 1))}
+                                onNext={() => setPastEventPage(p => Math.min(pastEventsTotalPages - 1, p + 1))}
+                            />
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }
