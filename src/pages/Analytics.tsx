@@ -1,206 +1,345 @@
-import { Navbar } from "@/components/Navbar";
-import { motion } from "framer-motion";
-import { TrendingUp, BookOpen, Code, Target, Calendar } from "lucide-react";
-import { ProgressRing } from "@/components/widgets/ProgressRing";
-import { cn } from "@/lib/utils";
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { TrendingUp, Users, Calendar, DollarSign, Activity, BarChart3, Clock } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState, useEffect } from "react";
+import { donationService } from "@/services/ApiServices";
+import { toast } from "sonner";
 
-const weeklyData = [
-  { name: "Mon", study: 4.5, code: 2.5 },
-  { name: "Tue", study: 3.8, code: 4.2 },
-  { name: "Wed", study: 5.2, code: 3.5 },
-  { name: "Thu", study: 4.0, code: 5.0 },
-  { name: "Fri", study: 3.5, code: 4.8 },
-  { name: "Sat", study: 2.0, code: 3.0 },
-  { name: "Sun", study: 4.2, code: 2.8 },
-];
+interface Donor {
+  _id: string;
+  name: string;
+  email: string;
+  graduationYear?: string;
+  campaign: string;
+  amount: number;
+  donatedAt: string;
+  status: string;
+}
 
-const skillBalance = [
-  { skill: "Algorithms", value: 78 },
-  { skill: "System Design", value: 65 },
-  { skill: "Frontend", value: 85 },
-  { skill: "Backend", value: 72 },
-  { skill: "DevOps", value: 45 },
-];
+export default function Analytics() {
+  const [recentDonors, setRecentDonors] = useState<Donor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const Analytics = () => {
+  useEffect(() => {
+    fetchRecentDonors();
+  }, []);
+
+  const fetchRecentDonors = async () => {
+    try {
+      setLoading(true);
+      const response = await donationService.getRecentDonors();
+      const donors = response?.data || [];
+      // Get only the 5 most recent
+      setRecentDonors(donors.slice(0, 5));
+    } catch (error) {
+      console.error("Failed to fetch recent donors:", error);
+      toast.error("Failed to load recent donors");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
+  const formatAmount = (amount: number) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
+  const getInitials = (name: string) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'A';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch(status.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-500/10 text-green-600';
+      case 'pending':
+        return 'bg-orange-500/10 text-orange-600';
+      default:
+        return 'bg-gray-500/10 text-gray-600';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold gradient-text mb-2">Analytics & Insights</h1>
+        <p className="text-muted-foreground">
+          Track engagement, growth, and community metrics
+        </p>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Analytics
-          </h1>
-          <p className="text-muted-foreground">
-            Track your progress and identify areas for improvement
-          </p>
-        </motion.div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Total Hours", value: "127", icon: Calendar, color: "orange" },
-            { label: "Study Hours", value: "68", icon: BookOpen, color: "green" },
-            { label: "Coding Hours", value: "59", icon: Code, color: "blue" },
-            { label: "Tasks Completed", value: "84", icon: Target, color: "yellow" },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="rounded-2xl p-4 bg-card border border-border/50 shadow-card"
-            >
-              <stat.icon className={cn(
-                "w-5 h-5 mb-3",
-                stat.color === "orange" && "text-widget-tasks",
-                stat.color === "green" && "text-widget-study",
-                stat.color === "blue" && "text-widget-code",
-                stat.color === "yellow" && "text-widget-focus"
-              )} />
-              <p className="font-mono text-3xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-            </motion.div>
-          ))}
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="stats-card-blue">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="stats-card-label">Total Alumni</p>
+              <p className="stats-card-number">12,847</p>
+              <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
+                <TrendingUp className="w-3 h-3" />
+                +5.2% this month
+              </p>
+            </div>
+            <Users className="stats-card-icon" />
+          </div>
         </div>
+        
+        <div className="stats-card-teal">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="stats-card-label">Active Users</p>
+              <p className="stats-card-number">3,421</p>
+              <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
+                <TrendingUp className="w-3 h-3" />
+                +12.1% this month
+              </p>
+            </div>
+            <Activity className="stats-card-icon" />
+          </div>
+        </div>
+        
+        <div className="stats-card-orange">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="stats-card-label">Events This Month</p>
+              <p className="stats-card-number">23</p>
+              <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
+                <Calendar className="w-3 h-3" />
+                6 upcoming
+              </p>
+            </div>
+            <Calendar className="stats-card-icon" />
+          </div>
+        </div>
+        
+        <div className="stats-card-pink">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="stats-card-label">Monthly Donations</p>
+              <p className="stats-card-number">₹284K</p>
+              <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
+                <TrendingUp className="w-3 h-3" />
+                +18.3% this month
+              </p>
+            </div>
+            <DollarSign className="stats-card-icon" />
+          </div>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Activity Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-2 rounded-3xl p-6 bg-card border border-border/50 shadow-card"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-semibold text-foreground">Weekly Activity</h3>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-widget-study" />
-                  Study
-                </span>
-                <span className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-widget-code" />
-                  Code
-                </span>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              User Engagement
+            </CardTitle>
+            <CardDescription>Monthly active users over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Chart visualization would go here</p>
+                <p className="text-sm">Integration with chart library needed</p>
               </div>
             </div>
-
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weeklyData}>
-                  <defs>
-                    <linearGradient id="studyGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--widget-study))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--widget-study))" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="codeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--widget-code))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--widget-code))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "12px",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="study"
-                    stroke="hsl(var(--widget-study))"
-                    fill="url(#studyGradient)"
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="code"
-                    stroke="hsl(var(--widget-code))"
-                    fill="url(#codeGradient)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Alumni Growth
+            </CardTitle>
+            <CardDescription>New alumni registrations by month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Growth chart would go here</p>
+                <p className="text-sm">Integration with chart library needed</p>
+              </div>
             </div>
-          </motion.div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Skill Balance */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-3xl p-6 bg-card border border-border/50 shadow-card"
-          >
-            <h3 className="font-semibold text-foreground mb-6">Skill Balance</h3>
-
+      {/* Top Performing Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Events</CardTitle>
+            <CardDescription>Most popular events by attendance</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              {skillBalance.map((skill, index) => (
-                <div key={skill.skill}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">{skill.skill}</span>
-                    <span className="font-mono text-foreground">{skill.value}%</span>
+              {[
+                { name: "Alumni Tech Summit 2024", attendees: 287, trend: "+15%" },
+                { name: "Annual Gala Night", attendees: 245, trend: "+8%" },
+                { name: "Healthcare Innovation Panel", attendees: 156, trend: "+22%" },
+                { name: "Finance Networking Mixer", attendees: 134, trend: "+5%" },
+              ].map((event, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{event.name}</p>
+                    <p className="text-sm text-muted-foreground">{event.attendees} attendees</p>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${skill.value}%` }}
-                      transition={{ duration: 0.8, delay: 0.4 + index * 0.1 }}
-                      className={cn(
-                        "h-full rounded-full",
-                        index % 3 === 0 && "bg-widget-study",
-                        index % 3 === 1 && "bg-widget-code",
-                        index % 3 === 2 && "bg-widget-tasks"
-                      )}
-                    />
-                  </div>
+                  <Badge variant="secondary" className="text-green-600">
+                    {event.trend}
+                  </Badge>
                 </div>
               ))}
             </div>
-          </motion.div>
-        </div>
-
-        {/* AI Insights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-6 rounded-3xl p-6 bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20"
-        >
-          <div className="flex items-start gap-4">
-            <div className="p-3 rounded-2xl bg-primary/20">
-              <TrendingUp className="w-6 h-6 text-primary" />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Alumni Activity</CardTitle>
+            <CardDescription>Most engaged alumni this month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { name: "Sarah Johnson '18", activity: "15 interactions", type: "Mentor" },
+                { name: "Michael Chen '15", activity: "12 interactions", type: "Donor" },
+                { name: "Emily Rodriguez '20", activity: "10 interactions", type: "Speaker" },
+                { name: "David Kim '16", activity: "8 interactions", type: "Volunteer" },
+              ].map((alumni, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-medium text-primary">
+                        {alumni.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{alumni.name}</p>
+                      <p className="text-sm text-muted-foreground">{alumni.activity}</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">{alumni.type}</Badge>
+                </div>
+              ))}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Geographic Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Geographic Distribution</CardTitle>
+          <CardDescription>Where our alumni are located</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { region: "North America", count: 8547, percentage: 66.5 },
+              { region: "Europe", count: 2134, percentage: 16.6 },
+              { region: "Asia Pacific", count: 1523, percentage: 11.9 },
+              { region: "Other", count: 643, percentage: 5.0 },
+            ].map((region) => (
+              <div key={region.region} className="text-center p-4 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold text-primary">{region.count.toLocaleString()}</p>
+                <p className="font-medium">{region.region}</p>
+                <p className="text-sm text-muted-foreground">{region.percentage}%</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Donations */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
             <div>
-              <h3 className="font-semibold text-foreground mb-2">AI Insights</h3>
-              <p className="text-muted-foreground">
-                Your coding productivity peaks in the afternoon. Consider scheduling complex coding tasks between 2-5 PM.
-                Your study consistency has improved by 15% this week — keep it up!
-              </p>
+              <CardTitle>Recent Donations</CardTitle>
+              <CardDescription>Latest donation activity across all campaigns</CardDescription>
             </div>
           </div>
-        </motion.div>
-      </main>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : recentDonors.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Donor</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Campaign</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Amount</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentDonors.map((donor) => (
+                    <tr key={donor._id} className="border-b last:border-b-0 hover:bg-muted/50 transition-colors">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {getInitials(donor.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{donor.name}</p>
+                            <p className="text-sm text-muted-foreground">{donor.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div>
+                          <p className="font-medium">{donor.campaign}</p>
+                          {donor.graduationYear && (
+                            <p className="text-sm text-muted-foreground">Class of {donor.graduationYear}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <p className="font-semibold text-primary">{formatAmount(donor.amount)}</p>
+                      </td>
+                      <td className="py-4 px-4">
+                        <p className="text-sm">{formatDate(donor.donatedAt)}</p>
+                      </td>
+                      <td className="py-4 px-4">
+                        <Badge className={getStatusColor(donor.status)}>
+                          {donor.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No recent donations</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default Analytics;
+}
