@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IndianRupee, TrendingUp, Users, Target, ArrowUpRight, Clock, Plus, Loader2 } from "lucide-react";
+import { IndianRupee, TrendingUp, Users, Target, ArrowUpRight, Clock, Plus, Loader2, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,8 @@ interface Donor {
     avatar?: string;
 }
 
+const ITEMS_PER_PAGE = 6;
+
 export function Donations() {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
@@ -75,6 +77,8 @@ export function Donations() {
     const [donationStats, setDonationStats] = useState<any>(null);
     const [recentDonors, setRecentDonors] = useState<any[]>([]);
     const [loadingStats, setLoadingStats] = useState(true);
+    const [activePage, setActivePage] = useState(0);
+    const [completedPage, setCompletedPage] = useState(0);
     const { toast: toastHook } = useToast();
 
     // Get featured campaigns (campaigns that need the least amount to reach their goal)
@@ -754,150 +758,90 @@ export function Donations() {
                 </div>
             </div>
 
-            {/* Active Campaigns - Card Layout */}
-            <div>
-                <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                    <Target className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">Active Campaigns</h2>
-                </div>
-                
-                {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[...Array(6)].map((_, i) => (
-                            <Skeleton key={i} className="h-64 rounded-lg" />
-                        ))}
+            {/* Pagination Controls Component */}
+            {(() => {
+                const PaginationControls = ({ 
+                    currentPage, 
+                    totalPages, 
+                    onPrevious, 
+                    onNext 
+                }: { 
+                    currentPage: number; 
+                    totalPages: number; 
+                    onPrevious: () => void; 
+                    onNext: () => void; 
+                }) => (
+                    <div className="flex items-center justify-center gap-4 mt-6">
+                        <Button variant="outline" size="sm" onClick={onPrevious} disabled={currentPage === 0} className="gap-1">
+                            <ChevronLeft className="h-4 w-4" />Previous
+                        </Button>
+                        <span className="text-sm text-muted-foreground">Page {currentPage + 1} of {totalPages}</span>
+                        <Button variant="outline" size="sm" onClick={onNext} disabled={currentPage >= totalPages - 1} className="gap-1">
+                            Next<ChevronRight className="h-4 w-4" />
+                        </Button>
                     </div>
-                ) : error ? (
-                    <Card className="bento-card gradient-surface border-card-border/50">
-                        <CardContent className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <p className="text-destructive mb-2">Error loading campaigns</p>
-                                <p className="text-sm text-muted-foreground">{error}</p>
-                                <Button 
-                                    variant="outline" 
-                                    onClick={() => window.location.reload()}
-                                    className="mt-4"
-                                >
-                                    Retry
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : campaigns.length === 0 ? (
-                    <Card className="bento-card gradient-surface border-card-border/50">
-                        <CardContent className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                <p className="text-muted-foreground mb-2">No campaigns found</p>
-                                <p className="text-sm text-muted-foreground">No active campaigns available.</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                        {campaigns.map((campaign, index) => {
-                            const daysLeft = campaign.endDate 
-                                ? Math.max(0, Math.ceil((new Date(campaign.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-                                : null;
+                );
 
-                            return (
-                                <Card
-                                    key={`campaign-${campaign._id}`}
-                                    className="bento-card gradient-surface border-card-border/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 animate-fade-in"
-                                    style={{ animationDelay: `${index * 100}ms` }}
-                                >
-                                    <CardHeader className="pb-3 space-y-2">
-                                        <div className="flex justify-between items-start gap-2">
-                                            {campaign.category && (
-                                                <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
-                                                    {campaign.category}
-                                                </Badge>
-                                            )}
-                                            <Badge variant="outline" className="ml-auto text-xs">
-                                                {getDonorCount(campaign)} donors
-                                            </Badge>
-                                        </div>
-                                        <CardTitle className="text-base line-clamp-1">
-                                            {campaign.name}
-                                        </CardTitle>
-                                        <CardDescription className="line-clamp-2 text-xs">
-                                            {campaign.description}
-                                        </CardDescription>
-                                    </CardHeader>
-                                    
-                                    <CardContent className="space-y-3">
-                                        {/* Progress Section */}
-                                        <div className="space-y-1.5">
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-muted-foreground">Progress</span>
-                                                <span className="font-medium text-foreground">
-                                                    {getProgressPercentage(campaign.raised, campaign.goal)}%
-                                                </span>
-                                            </div>
-                                            <div className="w-full bg-secondary rounded-full h-1.5">
-                                                <div
-                                                    className="bg-gradient-to-r from-primary to-primary/80 h-1.5 rounded-full transition-all duration-500"
-                                                    style={{ width: `${getProgressPercentage(campaign.raised, campaign.goal)}%` }}
-                                                />
-                                            </div>
-                                        </div>
+                // Categorize campaigns
+                const activeCampaigns = campaigns.filter(c => getProgressPercentage(c.raised, c.goal) < 100);
+                const completedCampaigns = campaigns.filter(c => getProgressPercentage(c.raised, c.goal) >= 100);
+                const activeTotalPages = Math.ceil(activeCampaigns.length / ITEMS_PER_PAGE);
+                const completedTotalPages = Math.ceil(completedCampaigns.length / ITEMS_PER_PAGE);
+                const paginatedActive = activeCampaigns.slice(activePage * ITEMS_PER_PAGE, (activePage + 1) * ITEMS_PER_PAGE);
+                const paginatedCompleted = completedCampaigns.slice(completedPage * ITEMS_PER_PAGE, (completedPage + 1) * ITEMS_PER_PAGE);
 
-                                        {/* Stats Grid */}
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-0.5">
-                                                <p className="text-xs text-muted-foreground">Raised</p>
-                                                <p className="font-semibold text-sm text-foreground">
-                                                    {formatCurrency(campaign.raised || 0)}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <p className="text-xs text-muted-foreground">Goal</p>
-                                                <p className="font-semibold text-sm text-foreground">
-                                                    {formatCurrency(campaign.goal)}
-                                                </p>
-                                            </div>
-                                        </div>
+                const CampaignCard = ({ campaign, index }: { campaign: Campaign; index: number }) => {
+                    const daysLeft = campaign.endDate ? Math.max(0, Math.ceil((new Date(campaign.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : null;
+                    return (
+                        <Card key={`campaign-${campaign._id}`} className="bento-card gradient-surface border-card-border/50 hover:shadow-lg transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+                            <CardHeader className="pb-3 space-y-2">
+                                <div className="flex justify-between items-start gap-2">
+                                    {campaign.category && <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">{campaign.category}</Badge>}
+                                    <Badge variant="outline" className="ml-auto text-xs">{getDonorCount(campaign)} donors</Badge>
+                                </div>
+                                <CardTitle className="text-base line-clamp-1">{campaign.name}</CardTitle>
+                                <CardDescription className="line-clamp-2 text-xs">{campaign.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between text-xs"><span className="text-muted-foreground">Progress</span><span className="font-medium text-foreground">{getProgressPercentage(campaign.raised, campaign.goal)}%</span></div>
+                                    <div className="w-full bg-secondary rounded-full h-1.5"><div className="bg-gradient-to-r from-primary to-primary/80 h-1.5 rounded-full transition-all duration-500" style={{ width: `${getProgressPercentage(campaign.raised, campaign.goal)}%` }} /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-0.5"><p className="text-xs text-muted-foreground">Raised</p><p className="font-semibold text-sm text-foreground">{formatCurrency(campaign.raised || 0)}</p></div>
+                                    <div className="space-y-0.5"><p className="text-xs text-muted-foreground">Goal</p><p className="font-semibold text-sm text-foreground">{formatCurrency(campaign.goal)}</p></div>
+                                </div>
+                                {daysLeft !== null && <Badge variant="outline" className={`text-xs ${daysLeft < 10 ? 'border-destructive text-destructive' : 'border-primary/50 text-primary'}`}>{daysLeft}d left</Badge>}
+                                <Button variant="outline" size="sm" className="w-full border-card-border/50 hover:bg-accent h-8 text-xs" onClick={() => fetchCampaignDonors(campaign._id, campaign.name)}>View Donors</Button>
+                            </CardContent>
+                        </Card>
+                    );
+                };
 
-                                        {/* Remaining Amount */}
-                                        <div className="bg-primary/5 rounded-lg p-2 border border-primary/20">
-                                            <p className="text-xs text-muted-foreground mb-0.5">Remaining</p>
-                                            <p className="font-bold text-base text-primary">
-                                                {formatCurrency(campaign.goal - (campaign.raised || 0))}
-                                            </p>
-                                        </div>
+                return (
+                    <>
+                        {/* Active Campaigns */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-4"><Target className="h-5 w-5 text-primary" /><h2 className="text-xl font-semibold text-foreground">Active Donations ({activeCampaigns.length})</h2></div>
+                            {activeCampaigns.length === 0 ? (
+                                <Card className="border-card-border/50"><CardContent className="pt-12 pb-12 text-center"><Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">No active campaigns.</p></CardContent></Card>
+                            ) : (
+                                <><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{paginatedActive.map((c, i) => <CampaignCard key={c._id} campaign={c} index={i} />)}</div>{activeTotalPages > 1 && <PaginationControls currentPage={activePage} totalPages={activeTotalPages} onPrevious={() => setActivePage(p => Math.max(0, p - 1))} onNext={() => setActivePage(p => Math.min(activeTotalPages - 1, p + 1))} />}</>
+                            )}
+                        </div>
 
-                                        {/* Days Left */}
-                                        {daysLeft !== null && (
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-muted-foreground">
-                                                    {formatDate(campaign.createdAt || "")}
-                                                </span>
-                                                <Badge 
-                                                    variant="outline" 
-                                                    className={`text-xs ${daysLeft < 10 ? 'border-destructive text-destructive' : 'border-primary/50 text-primary'}`}
-                                                >
-                                                    {daysLeft}d left
-                                                </Badge>
-                                            </div>
-                                        )}
-
-                                        {/* Action Buttons */}
-                                        <div className="flex gap-2 pt-1">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="flex-1 border-card-border/50 hover:bg-accent h-8 text-xs"
-                                                onClick={() => fetchCampaignDonors(campaign._id, campaign.name)}
-                                            >
-                                                View Donors
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                )}
+                        {/* Completed Campaigns */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-4"><CheckCircle className="h-5 w-5 text-emerald-500" /><h2 className="text-xl font-semibold text-foreground">Completed Donations ({completedCampaigns.length})</h2></div>
+                            {completedCampaigns.length === 0 ? (
+                                <Card className="border-card-border/50"><CardContent className="pt-12 pb-12 text-center"><CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">No completed campaigns yet.</p></CardContent></Card>
+                            ) : (
+                                <><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{paginatedCompleted.map((c, i) => <CampaignCard key={c._id} campaign={c} index={i} />)}</div>{completedTotalPages > 1 && <PaginationControls currentPage={completedPage} totalPages={completedTotalPages} onPrevious={() => setCompletedPage(p => Math.max(0, p - 1))} onNext={() => setCompletedPage(p => Math.min(completedTotalPages - 1, p + 1))} />}</>
+                            )}
+                        </div>
+                    </>
+                );
+            })()}
             </div>
 
             {/* Recent Donations - Full Width */}
