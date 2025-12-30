@@ -23,15 +23,15 @@ export function Toaster() {
   const getIconBgColor = (variant?: string) => {
     switch (variant) {
       case "info":
-        return "bg-blue-500";
+        return "bg-blue-500 text-white";
       case "success":
-        return "bg-green-500";
+        return "bg-emerald-500 text-white";
       case "warning":
-        return "bg-yellow-500";
+        return "bg-amber-500 text-white";
       case "destructive":
-        return "bg-red-500";
+        return "bg-rose-500 text-white";
       default:
-        return "bg-zinc-600";
+        return "bg-slate-600 text-white";
     }
   };
 
