@@ -322,82 +322,96 @@ export default function Events() {
                     {filteredEvents.map((event, index) => (
                         <Card 
                             key={event._id} 
-                            className="bento-card hover:shadow-md border-card-border/50 animate-fade-in hover-lift group flex flex-col h-full"
+                            className="overflow-hidden border-border/30 bg-card animate-fade-in group flex flex-col h-full"
                             style={{ animationDelay: `${index * 100}ms` }}
                         >
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
+                            {/* Card Header with Title */}
+                            <CardHeader className="pb-2 pt-5 px-5">
+                                <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
                                     {event.title}
                                 </CardTitle>
-                                <div className="flex items-center gap-2 flex-wrap">
+                            </CardHeader>
+
+                            <CardContent className="flex-1 flex flex-col px-5 pb-5">
+                                {/* Status Badges */}
+                                <div className="flex items-center gap-2 flex-wrap mb-3">
                                     {getStatusBadge(event.isactive)}
                                     {event.category && (
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge variant="secondary" className="text-xs font-medium">
                                             {event.category}
                                         </Badge>
                                     )}
                                 </div>
-                            </CardHeader>
 
-                            <CardContent className="flex-1 flex flex-col">
-                                <p className="text-muted-foreground text-sm line-clamp-2 min-h-[2.5rem] mb-4">
+                                {/* Description */}
+                                <p className="text-foreground/80 text-sm leading-relaxed line-clamp-2 mb-4">
                                     {event.description}
                                 </p>
                                 
-                                <div className="space-y-2 text-sm flex-1">
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />
-                                        <span className="truncate">{formatDate(event.date)}</span>
+                                {/* Event Details with better contrast */}
+                                <div className="space-y-2.5 text-sm flex-1 mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+                                            <CalendarDays className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <span className="text-foreground font-medium">{formatDate(event.date)}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <Clock className="h-4 w-4 text-primary flex-shrink-0" />
-                                        <span className="truncate">{event.time || "TBD"}</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+                                            <Clock className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <span className="text-foreground font-medium">{event.time || "TBD"}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                                        <span className="truncate">{event.location || "TBD"}</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+                                            <MapPin className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <span className="text-foreground font-medium truncate">{event.location || "TBD"}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <Users className="h-4 w-4 text-primary flex-shrink-0" />
-                                        <span className="truncate">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+                                            <Users className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <span className="text-foreground font-medium">
                                             {event.participants.length} 
                                             {event.maxAttendees && `/${event.maxAttendees}`} participants
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* Action Buttons - Always at bottom */}
-                                <div className="flex flex-col gap-2 pt-4 mt-auto">
-                                    <Button
-                                        size="sm"
-                                        className="w-full"
-                                        onClick={() => registeredEvents.has(event._id) 
-                                            ? handleLeaveEvent(event._id) 
-                                            : handleJoinEvent(event._id)
-                                        }
-                                        disabled={
-                                            joiningEvent === event._id ||
-                                            (!registeredEvents.has(event._id) && event.maxAttendees && event.participants.length >= event.maxAttendees)
-                                        }
-                                        variant={registeredEvents.has(event._id) ? "secondary" : "default"}
-                                    >
-                                        {joiningEvent === event._id ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                                {registeredEvents.has(event._id) ? "Leaving..." : "Joining..."}
-                                            </>
-                                        ) : registeredEvents.has(event._id) ? (
-                                            <>
-                                                <Check className="w-4 h-4 mr-2" />
-                                                Leave Event
-                                            </>
-                                        ) : (event.maxAttendees && event.participants.length >= event.maxAttendees) ? (
-                                            "Event Full"
-                                        ) : (
-                                            "Join Event"
-                                        )}
-                                    </Button>
-                                </div>
+                                {/* Separator */}
+                                <div className="border-t border-border/50 -mx-5 mb-4"></div>
+
+                                {/* Action Button */}
+                                <Button
+                                    size="sm"
+                                    className="w-full h-10 font-medium"
+                                    onClick={() => registeredEvents.has(event._id) 
+                                        ? handleLeaveEvent(event._id) 
+                                        : handleJoinEvent(event._id)
+                                    }
+                                    disabled={
+                                        joiningEvent === event._id ||
+                                        (!registeredEvents.has(event._id) && event.maxAttendees && event.participants.length >= event.maxAttendees)
+                                    }
+                                    variant={registeredEvents.has(event._id) ? "outline" : "default"}
+                                >
+                                    {joiningEvent === event._id ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                            {registeredEvents.has(event._id) ? "Leaving..." : "Joining..."}
+                                        </>
+                                    ) : registeredEvents.has(event._id) ? (
+                                        <>
+                                            <Check className="w-4 h-4 mr-2" />
+                                            Leave Event
+                                        </>
+                                    ) : (event.maxAttendees && event.participants.length >= event.maxAttendees) ? (
+                                        "Event Full"
+                                    ) : (
+                                        "Join Event"
+                                    )}
+                                </Button>
                             </CardContent>
                         </Card>
                     ))}
