@@ -28,7 +28,7 @@ export function BentoCard({
   return (
     <Card className={cn(
       "group transition-all duration-300 hover:-translate-y-1",
-      "rounded-2xl border-border/30",
+      "rounded-3xl border-border/30",
       "bg-gradient-to-br from-card via-card to-muted/20",
       "dark:from-card dark:via-card dark:to-muted/10",
       sizeClasses[size],
