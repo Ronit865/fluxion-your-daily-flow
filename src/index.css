@@ -299,10 +299,10 @@
     transform: translateY(-2px);
   }
 
-  /* Vibrant Yellow Stats Card */
+  /* Vibrant Lavender/Purple Stats Card */
   .stats-card-teal {
-    background: #FFE6A0;
-    color: #713f12;
+    background: #D4BBFF;
+    color: #4c1d95;
     padding: 1.25rem;
     border-radius: 1.5rem;
     transition: var(--transition-smooth);
@@ -389,8 +389,8 @@
   }
   
   .dark .stats-card-teal {
-    background: #d97706;
-    color: #fef3c7;
+    background: #7c3aed;
+    color: #ede9fe;
   }
   
   .dark .stats-card-pink {

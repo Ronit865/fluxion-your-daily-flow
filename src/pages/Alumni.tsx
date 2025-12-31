@@ -411,7 +411,7 @@ export default function Alumni() {
                 {/* Company */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">Company</p>
-                  <p className="text-sm font-medium text-foreground line-clamp-1">{person.company || "-"}</p>
+                  <p className="text-sm font-medium text-foreground line-clamp-1">{(person as any).company || "-"}</p>
                 </div>
 
                 {/* Action Button */}
