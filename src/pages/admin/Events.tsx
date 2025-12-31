@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Clock, MapPin, Users, Plus, Eye, Edit, Trash2, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Users, Plus, MoreVertical, Edit, Trash2, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -375,15 +375,11 @@ export function Events() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
-                <Eye className="h-4 w-4" />
+                <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
-              </DropdownMenuItem>
               <DropdownMenuItem>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Event
@@ -436,7 +432,7 @@ export function Events() {
         </div>
 
         {/* Event Footer */}
-        <div className="mt-auto pt-4 border-t border-card-border/20">
+        <div className="mt-auto pt-4">
           <Button
             variant="outline"
             size="sm"

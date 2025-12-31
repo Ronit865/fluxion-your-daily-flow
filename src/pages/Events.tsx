@@ -251,10 +251,12 @@ export default function Events() {
                         <Clock className="h-4 w-4 text-primary flex-shrink-0" />
                         <span className="text-foreground font-medium truncate">{event.time || "TBD"}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="text-foreground font-medium truncate">{event.location || "TBD"}</span>
-                    </div>
+                    {event.location && (
+                        <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="text-foreground font-medium truncate">{event.location}</span>
+                        </div>
+                    )}
                     <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-primary flex-shrink-0" />
                         <span className="text-foreground font-medium truncate">
@@ -262,9 +264,6 @@ export default function Events() {
                         </span>
                     </div>
                 </div>
-
-                {/* Separator */}
-                <div className="border-t border-border/50 -mx-5 mb-4"></div>
 
                 {/* Action Button */}
                 <Button

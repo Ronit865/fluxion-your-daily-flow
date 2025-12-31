@@ -372,63 +372,54 @@ export default function Alumni() {
           </div>
         ) : (
           filteredAlumni.map((person) => (
-            <Card key={person._id} className="bento-card hover:shadow-md border-card-border/50 hover-lift group flex flex-col h-full">
-              <CardHeader className="pb-4">
-                <div className="flex items-start gap-4">
-                  <div className="relative cursor-pointer" onClick={() => handleAvatarClick(person._id)}>
-                    <Avatar className="w-16 h-16 ring-2 ring-primary/20 flex-shrink-0 hover:ring-4 transition-all">
+            <Card key={person._id} className="overflow-hidden border-border/30 bg-card flex flex-col h-full group hover:shadow-lg transition-all duration-300">
+              <CardHeader className="pb-2 pt-4 px-4">
+                {/* Avatar and Name */}
+                <div className="flex gap-2.5 mb-2">
+                  <div className="relative cursor-pointer flex-shrink-0" onClick={() => handleAvatarClick(person._id)}>
+                    <Avatar className="w-14 h-14 rounded-lg ring-2 ring-primary/20 group-hover:ring-4 transition-all">
                       <AvatarImage src={person.avatar} alt={person.name} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-medium text-lg">
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white font-bold text-sm rounded-lg">
                         {person.name?.split(' ').map(n => n[0]).join('') || 'AL'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background rounded-full"></div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg group-hover:text-primary transition-colors truncate">
+                    <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
                       {person.name || 'Unknown'}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {person.graduationYear ? `Class of ${person.graduationYear}` : 'Graduate'}
-                    </p>
-                    <p className="text-sm text-muted-foreground truncate">{person.course || 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground">Graduated {person.graduationYear || 'N/A'}</p>
                   </div>
                 </div>
               </CardHeader>
-              
-              <CardContent className="flex-1 flex flex-col space-y-4">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Briefcase className="w-4 h-4 text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{person.course || 'Course not specified'}</p>
-                      <p className="text-muted-foreground">Alumni</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Graduated: {person.graduationYear || 'N/A'}</span>
-                  </div>
+
+              <CardContent className="flex-1 flex flex-col px-4 pb-4 space-y-2">
+                {/* Course */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Course</p>
+                  <p className="text-sm font-semibold text-foreground line-clamp-1">{person.course || "-"}</p>
                 </div>
 
-                <div className="flex flex-wrap gap-1">
-                  <Badge variant="secondary">Alumni</Badge>
-                  <Badge variant="outline" className="text-xs text-green-600 border-green-600">
-                    Verified
-                  </Badge>
-                  {person.course && (
-                    <Badge variant="outline" className="text-xs">
-                      {person.course}
-                    </Badge>
-                  )}
+                {/* Email */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Email</p>
+                  <p className="text-xs font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer" title={person.email || "-"}>
+                    {person.email || "-"}
+                  </p>
                 </div>
 
-                <div className="pt-2 mt-auto">
+                {/* Company */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Company</p>
+                  <p className="text-sm font-medium text-foreground line-clamp-1">{person.company || "-"}</p>
+                </div>
+
+                {/* Action Button */}
+                <div className="mt-auto pt-3">
                   {connectionStatuses[person._id] && connectionStatuses[person._id].status === 'accepted' ? (
                     <Button 
                       size="sm" 
-                      className="w-full gap-2"
+                      className="w-full font-semibold gap-2"
                       onClick={() => handleMessage(person._id)}
                     >
                       <MessageCircle className="w-4 h-4" />
@@ -438,7 +429,7 @@ export default function Alumni() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="w-full gap-2"
+                      className="w-full font-semibold gap-2"
                       disabled
                     >
                       <UserCheck className="w-4 h-4" />
@@ -447,7 +438,7 @@ export default function Alumni() {
                   ) : (
                     <Button 
                       size="sm" 
-                      className="w-full gap-2"
+                      className="w-full font-semibold gap-2"
                       onClick={() => handleConnect(person._id)}
                       disabled={loadingConnections[person._id]}
                     >

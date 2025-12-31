@@ -133,7 +133,7 @@ export default function Donations() {
           </div>
 
           {/* Stats Section */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-card-border/20 flex-1">
+          <div className="grid grid-cols-2 gap-4 pt-2 flex-1">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-primary flex-shrink-0" />
               <div>

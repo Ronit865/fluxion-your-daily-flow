@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { jobService } from '@/services/ApiServices';
 import { useToast } from '@/hooks/use-toast';
-import { Briefcase, MapPin, DollarSign, Check, Trash2, Clock, AlertCircle, CheckCircle, Calendar } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Check, Trash2, Clock, AlertCircle, CheckCircle, Calendar, Users } from 'lucide-react';
 
 interface Job {
   _id: string;
@@ -312,6 +312,12 @@ export function Jobs() {
                 <JobCard
                   key={job._id}
                   job={job}
+                  onVerify={undefined}
+                  onViewApplicants={(jobId, jobTitle) => {
+                    // Simple alert for now, can be replaced with a modal
+                    const applicantList = job.applicants?.map((a: any) => `${a.name || a.email}`).join('\n') || 'No applicants';
+                    alert(`Applicants for "${jobTitle}":\n\n${applicantList}`);
+                  }}
                   onDelete={(id) => {
                     setJobToDelete(id);
                     setDeleteDialogOpen(true);
@@ -349,138 +355,111 @@ interface JobCardProps {
   job: Job;
   onVerify?: (id: string) => void;
   onDelete: (id: string) => void;
+  onViewApplicants?: (jobId: string, jobTitle: string) => void;
   actionLoading: string | null;
 }
 
-function JobCard({ job, onVerify, onDelete, actionLoading }: JobCardProps) {
+function JobCard({ job, onVerify, onDelete, onViewApplicants, actionLoading }: JobCardProps) {
   return (
-    <Card className="bento-card hover-lift border-card-border/50 overflow-hidden flex flex-col h-full">
-      <CardHeader className="space-y-3">
-        <div className="flex justify-between items-start gap-2">
-          <CardTitle className="text-lg line-clamp-1 text-foreground min-h-[1.75rem]">
+    <Card className="overflow-hidden border-border/30 bg-card flex flex-col h-full group hover:shadow-lg transition-all duration-300">
+      {/* Header */}
+      <CardHeader className="pb-2 pt-5 px-5">
+        <div className="flex justify-between items-start gap-3">
+          <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1">
             {job.title}
           </CardTitle>
           {job.isVerified ? (
-            <Badge className="bg-success/10 text-success border-success/20 shrink-0">
-              <Check className="h-3 w-3 mr-1" />
-              Verified
-            </Badge>
+            <Badge className="bg-green-500/15 text-green-600 border-green-200/50 text-xs shrink-0">✓ Verified</Badge>
           ) : (
-            <Badge variant="outline" className="border-warning text-warning shrink-0">
-              <Clock className="h-3 w-3 mr-1" />
-              Pending
-            </Badge>
+            <Badge className="bg-amber-500/15 text-amber-600 border-amber-200/50 text-xs shrink-0">⚠ Pending</Badge>
           )}
         </div>
-        <CardDescription className="line-clamp-1 text-base font-medium text-primary min-h-[1.5rem]">
-          {job.company || 'Company Not Specified'}
-        </CardDescription>
       </CardHeader>
-      
-      <CardContent className="space-y-4 flex-1 flex flex-col">
-        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed min-h-[2.5rem]">
-          {job.description}
+
+      <CardContent className="flex-1 flex flex-col px-5 pb-5">
+        {/* Company */}
+        <p className="text-sm font-medium text-muted-foreground mb-4">
+          {job.company || 'Company Not Specified'}
         </p>
-        
-        <div className="space-y-2.5 flex-1">
-          {job.location && (
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <MapPin className="h-4 w-4 text-primary" />
-              </div>
-              <span className="truncate font-medium text-foreground">{job.location}</span>
-            </div>
-          )}
-          
-          {job.salary && (
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
-                <DollarSign className="h-4 w-4 text-success" />
-              </div>
-              <span className="font-medium text-foreground">${job.salary.toLocaleString()} / year</span>
-            </div>
-          )}
-          
-          <div className="flex items-center gap-2 text-sm">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <Calendar className="h-4 w-4 text-accent-foreground" />
-            </div>
-            <span className="font-medium text-foreground">{new Date(job.createdAt).toLocaleDateString()}</span>
-          </div>
 
-          {job.jobType && (
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                <Briefcase className="h-4 w-4 text-warning" />
-              </div>
-              <span className="font-medium text-foreground">{job.jobType}</span>
-            </div>
-          )}
-        </div>
-
+        {/* Category */}
         {job.category && (
-          <Badge variant="outline" className="text-xs font-medium">
+          <Badge variant="secondary" className="text-xs font-medium w-fit mb-4">
             {job.category}
           </Badge>
         )}
 
-        {job.requirements && job.requirements.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground">Requirements:</p>
-            <div className="flex flex-wrap gap-2">
-              {job.requirements.slice(0, 2).map((req, idx) => (
-                <Badge key={idx} variant="secondary" className="text-xs">
-                  {req}
-                </Badge>
-              ))}
-              {job.requirements.length > 2 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{job.requirements.length - 2} more
-                </Badge>
-              )}
+        {/* Job Details - Stacked */}
+        <div className="space-y-3 text-sm flex-1 mb-4">
+          {job.location && (
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">{job.location}</span>
             </div>
+          )}
+          {job.salary && (
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">${job.salary.toLocaleString()}/yr</span>
+            </div>
+          )}
+          {job.jobType && (
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">{job.jobType}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="text-foreground font-medium">{new Date(job.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        {/* Applicants */}
+        {job.applicants && job.applicants.length > 0 && (
+          <div className="flex items-center justify-between text-sm mb-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Users className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="font-medium">{job.applicants.length} applicant{job.applicants.length !== 1 ? 's' : ''}</span>
+            </div>
+            {onViewApplicants && (
+              <Button
+                onClick={() => onViewApplicants(job._id, job.title)}
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-primary hover:bg-transparent hover:underline"
+              >
+                View
+              </Button>
+            )}
           </div>
         )}
 
-        {job.applicants && job.applicants.length > 0 && (
-          <div className="pt-3 border-t border-card-border/20">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-xs font-bold text-primary">
-                  {job.applicants.length}
-                </span>
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Applicant{job.applicants.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-      
-      <CardFooter className="gap-2 pt-4 border-t border-card-border/20 mt-auto">
-        {!job.isVerified && onVerify && (
+        {/* Action Button */}
+        <div className="mt-auto pt-4 flex gap-2">
+          {!job.isVerified && onVerify && (
+            <Button 
+              onClick={() => onVerify(job._id)} 
+              disabled={actionLoading === job._id}
+              size="sm"
+              className="flex-1"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Verify
+            </Button>
+          )}
           <Button 
-            onClick={() => onVerify(job._id)} 
+            onClick={() => onDelete(job._id)} 
             disabled={actionLoading === job._id}
-            className="flex-1 gradient-primary text-primary-foreground hover:shadow-purple"
+            variant="destructive"
             size="sm"
+            className="flex-1"
           >
-            <Check className="h-4 w-4 mr-2" />
-            Verify
+            <Trash2 className="h-4 w-4 mr-2" />
+            Reject
           </Button>
-        )}
-        <Button 
-          onClick={() => onDelete(job._id)} 
-          disabled={actionLoading === job._id}
-          variant="destructive"
-          size="sm"
-          className="flex-1"
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Reject
-        </Button>
-      </CardFooter>
+        </div>
+      </CardContent>
     </Card>
   );
 }

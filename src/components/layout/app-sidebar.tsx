@@ -36,7 +36,7 @@ const baseNavigation = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Alumni Directory", url: "/alumni", icon: Users },
   { title: "Events", url: "/events", icon: Calendar },
-  { title: "Jobs & Mentorship", url: "/jobs", icon: Briefcase },
+  { title: "Jobs", url: "/jobs", icon: Briefcase },
   { title: "Donations", url: "/donations", icon: Heart },
   { title: "Community Chat", url: "/communications", icon: MessageSquare },
 ];

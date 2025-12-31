@@ -315,67 +315,84 @@ export default function Jobs() {
           ) : (
             <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {allJobs.map((job) => (
-                <Card key={job._id} className="bento-card hover:shadow-md border-card-border/50 hover-lift flex flex-col h-full">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg line-clamp-2 min-h-[3.5rem]">{job.title}</CardTitle>
+                <Card key={job._id} className="overflow-hidden border-border/30 bg-card flex flex-col h-full group hover:shadow-lg transition-all duration-300">
+                  <CardHeader className="pb-2 pt-5 px-5">
+                    <div className="flex justify-between items-start gap-3">
+                      <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1">
+                        {job.title}
+                      </CardTitle>
                       {job.isVerified && (
-                        <Badge variant="default" className="flex items-center gap-1 flex-shrink-0">
-                          <CheckCircle className="w-3 h-3" />
-                          Verified
-                        </Badge>
+                        <Badge className="bg-green-500/15 text-green-600 border-green-200/50 text-xs shrink-0">✓ Verified</Badge>
                       )}
                     </div>
-                    <CardDescription className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{job.company}</span>
-                    </CardDescription>
                   </CardHeader>
 
-                  <CardContent className="flex-1 flex flex-col space-y-4">
-                    <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
-                      {job.description}
+                  <CardContent className="flex-1 flex flex-col px-5 pb-5">
+                    {/* Company */}
+                    <p className="text-sm font-medium text-muted-foreground mb-4">
+                      {job.company || 'Company Not Specified'}
                     </p>
 
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                        <span className="truncate">{job.location}</span>
-                      </div>
+                    {/* Category */}
+                    {job.category && (
+                      <Badge variant="secondary" className="text-xs font-medium w-fit mb-4">
+                        {job.category}
+                      </Badge>
+                    )}
 
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <DollarSign className="w-4 h-4 text-primary flex-shrink-0" />
-                        <span>₹{job.salary.toLocaleString()}/year</span>
+                    {/* Job Details - Stacked */}
+                    <div className="space-y-3 text-sm flex-1 mb-4">
+                      {job.location && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="text-foreground font-medium">{job.location}</span>
+                        </div>
+                      )}
+                      {job.salary && (
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="text-foreground font-medium">₹{job.salary.toLocaleString()}/yr</span>
+                        </div>
+                      )}
+                      {job.jobType && (
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="text-foreground font-medium">{job.jobType}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="text-foreground font-medium">{new Date(job.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">{job.jobType}</Badge>
-                      <Badge variant="outline">{job.experienceRequired}</Badge>
-                      <Badge variant="secondary">{job.category}</Badge>
-                    </div>
-
-                    <div className="pt-2 mt-auto space-y-2">
+                    {/* Action Buttons */}
+                    <div className="mt-auto pt-4 flex gap-2">
                       <Button
-                        variant="outline"
-                        className="w-full"
                         onClick={() => handleViewDetails(job)}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
                       >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
+                        <Eye className="h-4 w-4 mr-2" />
+                        Details
                       </Button>
                       <Button
-                        className={`w-full ${hasApplied(job) ? 'bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-semibold shadow-lg' : ''}`}
                         onClick={() => hasApplied(job) ? handleUnapply(job._id) : handleApply(job._id)}
+                        size="sm"
+                        className="flex-1"
                         variant={hasApplied(job) ? "default" : "default"}
                       >
                         {hasApplied(job) ? (
                           <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
+                            <CheckCircle className="h-4 w-4 mr-2" />
                             Applied
                           </>
                         ) : (
-                          "Apply Now"
+                          <>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Apply
+                          </>
                         )}
                       </Button>
                     </div>
@@ -673,7 +690,7 @@ export default function Jobs() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex gap-3 pt-4">
                 <Button
                   className={`flex-1 ${hasApplied(jobDetailsData) ? 'bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-semibold shadow-lg' : ''}`}
                   onClick={() => {

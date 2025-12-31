@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IndianRupee, TrendingUp, Users, Target, ArrowUpRight, Clock, Plus, Loader2, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { IndianRupee, TrendingUp, Users, Target, ArrowUpRight, Clock, Plus, Loader2, ChevronLeft, ChevronRight, CheckCircle, MoreVertical, Trash2, Edit } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -200,11 +201,11 @@ export function Donations() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "completed":
-                return <Badge className="bg-success/10 text-success border-success/20">Completed</Badge>;
+                return <Badge className="bg-green-500/15 text-green-600 border-green-200/50">✓ Completed</Badge>;
             case "pending":
-                return <Badge variant="outline" className="border-warning text-warning">Pending</Badge>;
+                return <Badge className="bg-amber-500/15 text-amber-600 border-amber-200/50">⚠ Pending</Badge>;
             case "failed":
-                return <Badge variant="destructive">Failed</Badge>;
+                return <Badge className="bg-red-500/15 text-red-600 border-red-200/50">✕ Failed</Badge>;
             default:
                 return <Badge variant="secondary">Unknown</Badge>;
         }
@@ -655,7 +656,7 @@ export function Donations() {
                             </div>
 
                             {/* Form Actions */}
-                            <div className="flex justify-end gap-3 pt-4 border-t border-card-border/20">
+                            <div className="flex justify-end gap-3 pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -791,28 +792,74 @@ export function Donations() {
                 const paginatedCompleted = completedCampaigns.slice(completedPage * ITEMS_PER_PAGE, (completedPage + 1) * ITEMS_PER_PAGE);
 
                 const CampaignCard = ({ campaign, index }: { campaign: Campaign; index: number }) => {
-                    const daysLeft = campaign.endDate ? Math.max(0, Math.ceil((new Date(campaign.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : null;
                     return (
-                        <Card key={`campaign-${campaign._id}`} className="bento-card gradient-surface border-card-border/50 hover:shadow-lg transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                            <CardHeader className="pb-3 space-y-2">
+                        <Card key={`campaign-${campaign._id}`} className="overflow-hidden border-border/30 bg-card flex flex-col h-full animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+                            <CardHeader className="pb-3 pt-5 px-5">
                                 <div className="flex justify-between items-start gap-2">
-                                    {campaign.category && <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">{campaign.category}</Badge>}
-                                    <Badge variant="outline" className="ml-auto text-xs">{getDonorCount(campaign)} donors</Badge>
+                                    <div className="flex-1 min-w-0">
+                                        <CardTitle className="text-lg font-bold text-foreground line-clamp-2">
+                                            {campaign.name}
+                                        </CardTitle>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem>
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                Edit Campaign
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem className="text-destructive">
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                Delete Campaign
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                                <CardTitle className="text-base line-clamp-1">{campaign.name}</CardTitle>
-                                <CardDescription className="line-clamp-2 text-xs">{campaign.description}</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-3">
+                            <CardContent className="flex-1 flex flex-col px-5 pb-5 space-y-3">
+                                <CardDescription className="line-clamp-2 text-xs">
+                                    {campaign.description}
+                                </CardDescription>
+
+                                {/* Progress Section */}
                                 <div className="space-y-1.5">
-                                    <div className="flex justify-between text-xs"><span className="text-muted-foreground">Progress</span><span className="font-medium text-foreground">{getProgressPercentage(campaign.raised, campaign.goal)}%</span></div>
-                                    <div className="w-full bg-secondary rounded-full h-1.5"><div className="bg-gradient-to-r from-primary to-primary/80 h-1.5 rounded-full transition-all duration-500" style={{ width: `${getProgressPercentage(campaign.raised, campaign.goal)}%` }} /></div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-muted-foreground">Progress</span>
+                                        <span className="font-medium text-foreground">{getProgressPercentage(campaign.raised, campaign.goal)}%</span>
+                                    </div>
+                                    <div className="w-full bg-secondary rounded-full h-2">
+                                        <div className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500" style={{ width: `${getProgressPercentage(campaign.raised, campaign.goal)}%` }} />
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-0.5"><p className="text-xs text-muted-foreground">Raised</p><p className="font-semibold text-sm text-foreground">{formatCurrency(campaign.raised || 0)}</p></div>
-                                    <div className="space-y-0.5"><p className="text-xs text-muted-foreground">Goal</p><p className="font-semibold text-sm text-foreground">{formatCurrency(campaign.goal)}</p></div>
+
+                                {/* Raised & Goal */}
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Raised</p>
+                                        <p className="font-semibold text-foreground">{formatCurrency(campaign.raised || 0)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Goal</p>
+                                        <p className="font-semibold text-foreground">{formatCurrency(campaign.goal)}</p>
+                                    </div>
                                 </div>
-                                {daysLeft !== null && <Badge variant="outline" className={`text-xs ${daysLeft < 10 ? 'border-destructive text-destructive' : 'border-primary/50 text-primary'}`}>{daysLeft}d left</Badge>}
-                                <Button variant="outline" size="sm" className="w-full border-card-border/50 hover:bg-accent h-8 text-xs" onClick={() => fetchCampaignDonors(campaign._id, campaign.name)}>View Donors</Button>
+
+                                {/* Donors and Button */}
+                                <div className="mt-auto pt-2 space-y-2">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Users className="h-4 w-4 text-primary flex-shrink-0" />
+                                        <span className="font-medium text-foreground">{getDonorCount(campaign)} donors</span>
+                                    </div>
+                                    <Button variant="outline" size="sm" className="w-full border-card-border/50 hover:bg-accent h-8 text-xs" onClick={() => fetchCampaignDonors(campaign._id, campaign.name)}>
+                                        View Donors
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     );
@@ -842,7 +889,6 @@ export function Donations() {
                     </>
                 );
             })()}
-            </div>
 
             {/* Recent Donations - Full Width */}
             <Card className="bento-card gradient-surface border-card-border/50">
@@ -1009,7 +1055,7 @@ export function Donations() {
                                     ))}
                                 </div>
                                 
-                                <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-card-border/20">
+                                <div className="flex justify-end gap-3 pt-4 mt-4">
                                     <Button
                                         variant="outline"
                                         onClick={() => setIsDonorsDialogOpen(false)}
