@@ -26,6 +26,8 @@ export function Dashboard() {
   const [donationStats, setDonationStats] = useState<any>(null);
   const [verifiedJobs, setVerifiedJobs] = useState<number>(0);
   const [totalJobs, setTotalJobs] = useState<number>(0);
+  const [pendingJobs, setPendingJobs] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [recentDonors, setRecentDonors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,9 +95,18 @@ export function Dashboard() {
           const eventsResponse = await eventService.getEvents();
           events = Array.isArray(eventsResponse?.data) ? eventsResponse.data : [];
           setTotalEvents(events.length);
+          
+          // Filter upcoming events (events with date >= today)
+          const now = new Date();
+          const upcoming = events
+            .filter((event: any) => new Date(event.date) >= now)
+            .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .slice(0, 5);
+          setUpcomingEvents(upcoming);
         } catch (eventsError) {
           console.warn('Failed to fetch events data:', eventsError);
           setTotalEvents(0);
+          setUpcomingEvents([]);
         }
 
         try {
@@ -115,10 +126,17 @@ export function Dashboard() {
             ? jobs.filter((job: any) => job.isVerified === true).length 
             : 0;
           setVerifiedJobs(verified);
+          
+          // Get pending jobs (not verified)
+          const pending = Array.isArray(jobs) 
+            ? jobs.filter((job: any) => job.isVerified !== true).slice(0, 5)
+            : [];
+          setPendingJobs(pending);
         } catch (jobsError) {
           console.warn('Failed to fetch jobs data:', jobsError);
           setTotalJobs(0);
           setVerifiedJobs(0);
+          setPendingJobs([]);
         }
 
         try {
@@ -377,81 +395,63 @@ export function Dashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Department Distribution */}
+        {/* Upcoming Events */}
         <Card className="lg:col-span-2 border-0 shadow-sm bg-card/50 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-primary" />
-                  Alumni by Department
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Upcoming Events
                 </CardTitle>
-                <CardDescription>Distribution across programs</CardDescription>
+                <CardDescription>Next scheduled events</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/admin/alumni')}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/admin/events')}>
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {departmentData.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={departmentData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {departmentData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.color}
-                            className="hover:opacity-80 transition-opacity cursor-pointer"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<CustomTooltip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                  {departmentData
-                    .sort((a, b) => b.value - a.value)
-                    .map((dept, index) => {
-                      const total = departmentData.reduce((sum, item) => sum + item.value, 0);
-                      const percentage = ((dept.value / total) * 100).toFixed(0);
-                      return (
-                        <div 
-                          key={dept.name}
-                          className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/50 transition-colors"
-                        >
-                          <div 
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: dept.color }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{dept.name}</p>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-sm font-semibold text-foreground">{dept.value}</span>
-                            <Badge variant="secondary" className="text-xs">{percentage}%</Badge>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+            {upcomingEvents.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingEvents.map((event: any, index: number) => (
+                  <div 
+                    key={event._id || index} 
+                    className="flex items-center gap-4 p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
+                    onClick={() => navigate('/admin/events')}
+                  >
+                    <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex-shrink-0">
+                      <span className="text-xs font-medium uppercase">
+                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
+                      </span>
+                      <span className="text-lg font-bold leading-none">
+                        {new Date(event.date).getDate()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {event.title || 'Untitled Event'}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {event.location || 'Location TBD'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(event.date).toLocaleDateString('en-US', { 
+                          weekday: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="h-64 flex items-center justify-center">
+              <div className="h-48 flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
-                  <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>No department data available</p>
+                  <Calendar className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No upcoming events</p>
                 </div>
               </div>
             )}
@@ -570,56 +570,70 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Summary Stats */}
-        <div className="space-y-4">
-          <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-blue-500/10">
-                  <TrendingUp className="w-6 h-6 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Raised</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {formatCurrency(donationStats?.totalRaised || 0)}
-                  </p>
+        {/* Pending Jobs Approval */}
+        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-primary" />
+                  Pending Approval
+                </CardTitle>
+                <CardDescription>Jobs awaiting verification</CardDescription>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {pendingJobs.length} pending
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {pendingJobs.length > 0 ? (
+              <div className="space-y-3">
+                {pendingJobs.map((job: any, index: number) => (
+                  <div 
+                    key={job._id || index} 
+                    className="p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
+                    onClick={() => navigate('/admin/jobs')}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {job.title || 'Untitled Job'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {job.company || 'Company not specified'}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-xs flex-shrink-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                        Pending
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      <span>{job.location || 'Remote'}</span>
+                      <span>•</span>
+                      <span>{job.type || 'Full-time'}</span>
+                    </div>
+                  </div>
+                ))}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2"
+                  onClick={() => navigate('/admin/jobs')}
+                >
+                  Review All Jobs <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            ) : (
+              <div className="h-48 flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <Briefcase className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No pending approvals</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-emerald-500/10">
-                  <UserCheck className="w-6 h-6 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Donors</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {donationStats?.activeDonors?.toLocaleString() || '0'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-violet-500/10">
-                  <Award className="w-6 h-6 text-violet-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg. Donation</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {formatCurrency(donationStats?.avgDonation || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
