@@ -4,11 +4,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { jobService } from '@/services/ApiServices';
 import { useToast } from '@/hooks/use-toast';
-import { Briefcase, MapPin, DollarSign, Check, Trash2, Clock, AlertCircle, CheckCircle, Calendar, Users } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Check, Trash2, Clock, AlertCircle, CheckCircle, Calendar, Users, Loader2, Mail, GraduationCap } from 'lucide-react';
 
 interface Job {
   _id: string;
@@ -31,6 +33,16 @@ interface Job {
   updatedAt?: string;
 }
 
+interface Applicant {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  course?: string;
+  graduationYear?: string;
+  appliedAt?: string;
+}
+
 export function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +51,12 @@ export function Jobs() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Applicants Dialog State
+  const [isApplicantsDialogOpen, setIsApplicantsDialogOpen] = useState(false);
+  const [selectedJobApplicants, setSelectedJobApplicants] = useState<Applicant[]>([]);
+  const [selectedJobTitle, setSelectedJobTitle] = useState("");
+  const [loadingApplicants, setLoadingApplicants] = useState(false);
 
   const fetchJobs = async () => {
     try {
@@ -313,10 +331,10 @@ export function Jobs() {
                   key={job._id}
                   job={job}
                   onVerify={undefined}
-                  onViewApplicants={(jobId, jobTitle) => {
-                    // Simple alert for now, can be replaced with a modal
-                    const applicantList = job.applicants?.map((a: any) => `${a.name || a.email}`).join('\n') || 'No applicants';
-                    alert(`Applicants for "${jobTitle}":\n\n${applicantList}`);
+                  onViewApplicants={(jobId, jobTitle, applicants) => {
+                    setSelectedJobTitle(jobTitle);
+                    setSelectedJobApplicants(applicants || []);
+                    setIsApplicantsDialogOpen(true);
                   }}
                   onDelete={(id) => {
                     setJobToDelete(id);
@@ -347,6 +365,103 @@ export function Jobs() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Applicants Dialog - Redesigned */}
+      <Dialog open={isApplicantsDialogOpen} onOpenChange={setIsApplicantsDialogOpen}>
+        <DialogContent 
+          className="sm:max-w-[700px] max-w-[95vw] bento-card gradient-surface border-card-border/50" 
+          style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+        >
+          <DialogHeader className="pb-4 border-b border-card-border/20">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-foreground">
+                  Job Applicants
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground mt-1">
+                  {selectedJobTitle} • {selectedJobApplicants.length} applicants
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {loadingApplicants ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">Loading applicants...</p>
+                </div>
+              </div>
+            ) : selectedJobApplicants.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <Users className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No applicants yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">This job hasn't received any applications. Share the listing to get more applicants.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-2 custom-scrollbar">
+                {selectedJobApplicants.map((applicant, index) => (
+                  <div 
+                    key={`applicant-${applicant._id || index}`}
+                    className="flex items-center justify-between p-4 rounded-xl bg-accent/30 border border-card-border/30 hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 group animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
+                        <AvatarImage 
+                          src={applicant.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${applicant.name || applicant.email}`} 
+                          alt={applicant.name || 'Applicant'} 
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/50 text-primary font-semibold">
+                          {(applicant.name || applicant.email || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {applicant.name || 'Anonymous Applicant'}
+                        </h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="h-3 w-3" />
+                          <span>{applicant.email || 'No email'}</span>
+                        </div>
+                        {applicant.course && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <GraduationCap className="h-3 w-3" />
+                            <span>{applicant.course} {applicant.graduationYear && `• ${applicant.graduationYear}`}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                      Applied
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-card-border/20">
+            <Button
+              variant="outline"
+              onClick={() => setIsApplicantsDialogOpen(false)}
+              className="border-card-border/50"
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -355,7 +470,7 @@ interface JobCardProps {
   job: Job;
   onVerify?: (id: string) => void;
   onDelete: (id: string) => void;
-  onViewApplicants?: (jobId: string, jobTitle: string) => void;
+  onViewApplicants?: (jobId: string, jobTitle: string, applicants: any[]) => void;
   actionLoading: string | null;
 }
 
@@ -424,7 +539,7 @@ function JobCard({ job, onVerify, onDelete, onViewApplicants, actionLoading }: J
             </div>
             {onViewApplicants && (
               <Button
-                onClick={() => onViewApplicants(job._id, job.title)}
+                onClick={() => onViewApplicants(job._id, job.title, job.applicants || [])}
                 variant="ghost"
                 size="sm"
                 className="h-auto p-0 text-primary hover:bg-transparent hover:underline"

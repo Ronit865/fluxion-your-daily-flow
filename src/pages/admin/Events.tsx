@@ -66,6 +66,19 @@ export function Events() {
   const [activeEventPage, setActiveEventPage] = useState(0);
   const [pastEventPage, setPastEventPage] = useState(0);
   const { toast } = useToast();
+  
+  // Edit Event State
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState<CreateEventForm>({
+    title: "",
+    description: "",
+    date: "",
+    time: "",
+    location: ""
+  });
+  const [editFormErrors, setEditFormErrors] = useState<Partial<CreateEventForm>>({});
 
   // Fetch events from backend
   useEffect(() => {
@@ -196,6 +209,72 @@ export function Events() {
       location: ""
     });
     setFormErrors({});
+  };
+
+  // Handle Edit Event
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setEditFormData({
+      title: event.title,
+      description: event.description,
+      date: event.date ? new Date(event.date).toISOString().split('T')[0] : "",
+      time: event.time || "",
+      location: event.location || ""
+    });
+    setEditFormErrors({});
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditInputChange = (field: keyof CreateEventForm, value: string) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+    if (editFormErrors[field]) {
+      setEditFormErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validateEditForm = (): boolean => {
+    const errors: Partial<CreateEventForm> = {};
+    if (!editFormData.title.trim()) errors.title = "Title is required";
+    if (!editFormData.description.trim()) errors.description = "Description is required";
+    if (!editFormData.date) errors.date = "Date is required";
+    setEditFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleUpdateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateEditForm() || !editingEvent) return;
+
+    try {
+      setIsEditing(true);
+      const eventData = {
+        title: editFormData.title.trim(),
+        description: editFormData.description.trim(),
+        date: editFormData.date,
+        time: editFormData.time || undefined,
+        location: editFormData.location.trim() || undefined
+      };
+
+      await eventService.updateEvent(editingEvent._id, eventData);
+      toast({
+        title: "Event updated",
+        description: "Event has been successfully updated",
+        variant: "success",
+      });
+      
+      setIsEditDialogOpen(false);
+      setEditingEvent(null);
+      fetchEvents();
+    } catch (err: any) {
+      const errorInfo = handleApiError(err);
+      toast({
+        title: "Error",
+        description: `Failed to update event: ${errorInfo.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   const handleViewParticipants = async (eventId: string, eventTitle: string) => {
@@ -378,9 +457,9 @@ export function Events() {
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-popover">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEditEvent(event)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Event
               </DropdownMenuItem>
@@ -833,47 +912,58 @@ export function Events() {
           )}
         </div>
 
-      {/* Participants Dialog */}
+      {/* Participants Dialog - Redesigned */}
       <Dialog open={isParticipantsDialogOpen} onOpenChange={setIsParticipantsDialogOpen}>
         <DialogContent 
           className="sm:max-w-[700px] max-w-[95vw] bento-card gradient-surface border-card-border/50" 
           style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
         >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Event Participants
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              {selectedEventTitle}
-            </DialogDescription>
+          <DialogHeader className="pb-4 border-b border-card-border/20">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-foreground">
+                  Event Participants
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground mt-1">
+                  {selectedEventTitle} • {selectedEventParticipants.length} registered
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           
           <div className="mt-4">
             {loadingParticipants ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex items-center justify-center py-16">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                  <p className="text-muted-foreground">Loading participants...</p>
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">Loading participants...</p>
                 </div>
               </div>
             ) : selectedEventParticipants.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex items-center justify-center py-16">
                 <div className="text-center">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">No participants yet</p>
-                  <p className="text-sm text-muted-foreground">This event hasn't received any registrations.</p>
+                  <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <Users className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No participants yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">This event hasn't received any registrations. Share the event to get more participants.</p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-2 custom-scrollbar">
                 {selectedEventParticipants.map((participant, index) => (
                   <div 
                     key={`participant-${participant._id}-${index}`}
-                    className="flex items-center justify-between p-4 rounded-lg border border-card-border/50 hover:bg-accent/30 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-xl bg-accent/30 border border-card-border/30 hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 group animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/50 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-background shadow-sm">
                         {participant.avatar ? (
                           <img 
                             src={participant.avatar} 
@@ -881,19 +971,24 @@ export function Events() {
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <Users className="h-6 w-6 text-primary" />
+                          <span className="text-lg font-semibold text-primary">
+                            {participant.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </span>
                         )}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-foreground">{participant.name}</h4>
+                        <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">{participant.name}</h4>
                         <p className="text-sm text-muted-foreground">{participant.email}</p>
                         {participant.course && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <Badge variant="secondary" className="mt-1 text-xs">
                             {participant.course}
-                          </p>
+                          </Badge>
                         )}
                       </div>
                     </div>
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/30">
+                      Registered
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -911,6 +1006,119 @@ export function Events() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] bento-card gradient-surface border-card-border/50" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+          <DialogHeader className="pb-4 border-b border-card-border/20">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Edit className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-foreground">Edit Event</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Update event details below
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <form onSubmit={handleUpdateEvent} className="space-y-5 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title" className="text-sm font-medium text-foreground">
+                Event Title *
+              </Label>
+              <Input
+                id="edit-title"
+                placeholder="Enter event title"
+                value={editFormData.title}
+                onChange={(e) => handleEditInputChange("title", e.target.value)}
+                className={`border-card-border/50 focus:border-primary ${editFormErrors.title ? "border-destructive" : ""}`}
+              />
+              {editFormErrors.title && <p className="text-sm text-destructive">{editFormErrors.title}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description" className="text-sm font-medium text-foreground">
+                Description *
+              </Label>
+              <Textarea
+                id="edit-description"
+                placeholder="Describe your event"
+                value={editFormData.description}
+                onChange={(e) => handleEditInputChange("description", e.target.value)}
+                className={`min-h-[100px] border-card-border/50 focus:border-primary resize-none ${editFormErrors.description ? "border-destructive" : ""}`}
+              />
+              {editFormErrors.description && <p className="text-sm text-destructive">{editFormErrors.description}</p>}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-date" className="text-sm font-medium text-foreground">Date *</Label>
+                <Input
+                  id="edit-date"
+                  type="date"
+                  value={editFormData.date}
+                  onChange={(e) => handleEditInputChange("date", e.target.value)}
+                  className={`border-card-border/50 focus:border-primary ${editFormErrors.date ? "border-destructive" : ""}`}
+                />
+                {editFormErrors.date && <p className="text-sm text-destructive">{editFormErrors.date}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-time" className="text-sm font-medium text-foreground">Time</Label>
+                <Input
+                  id="edit-time"
+                  type="time"
+                  value={editFormData.time}
+                  onChange={(e) => handleEditInputChange("time", e.target.value)}
+                  className="border-card-border/50 focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-location" className="text-sm font-medium text-foreground">Location</Label>
+              <Input
+                id="edit-location"
+                placeholder="Enter event location"
+                value={editFormData.location}
+                onChange={(e) => handleEditInputChange("location", e.target.value)}
+                className="border-card-border/50 focus:border-primary"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-card-border/20">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                disabled={isEditing}
+                className="border-card-border/50"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isEditing}
+                className="gradient-primary text-primary-foreground hover:shadow-purple"
+              >
+                {isEditing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Event
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

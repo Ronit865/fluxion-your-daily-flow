@@ -81,6 +81,19 @@ export function Donations() {
     const [activePage, setActivePage] = useState(0);
     const [completedPage, setCompletedPage] = useState(0);
     const { toast: toastHook } = useToast();
+    
+    // Edit Campaign State
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+    const [isEditingCampaign, setIsEditingCampaign] = useState(false);
+    const [editFormData, setEditFormData] = useState<CreateCampaignForm>({
+        name: "",
+        description: "",
+        goal: "",
+        endDate: "",
+        category: ""
+    });
+    const [editFormErrors, setEditFormErrors] = useState<Partial<CreateCampaignForm>>({});
 
     // Get featured campaigns (campaigns that need the least amount to reach their goal)
     const getFeaturedCampaigns = () => {
@@ -417,6 +430,92 @@ export function Donations() {
             category: ""
         });
         setFormErrors({});
+    };
+
+    // Handle Edit Campaign
+    const handleEditCampaign = (campaign: Campaign) => {
+        setEditingCampaign(campaign);
+        setEditFormData({
+            name: campaign.name,
+            description: campaign.description,
+            goal: campaign.goal.toString(),
+            endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : "",
+            category: campaign.category || ""
+        });
+        setEditFormErrors({});
+        setIsEditDialogOpen(true);
+    };
+
+    const handleEditInputChange = (field: keyof CreateCampaignForm, value: string) => {
+        setEditFormData(prev => ({ ...prev, [field]: value }));
+        if (editFormErrors[field]) {
+            setEditFormErrors(prev => ({ ...prev, [field]: undefined }));
+        }
+    };
+
+    const validateEditForm = (): boolean => {
+        const errors: Partial<CreateCampaignForm> = {};
+        if (!editFormData.name.trim()) errors.name = "Campaign name is required";
+        if (!editFormData.description.trim()) errors.description = "Description is required";
+        if (!editFormData.goal || parseFloat(editFormData.goal) <= 0) errors.goal = "Please enter a valid goal amount";
+        if (!editFormData.endDate) errors.endDate = "End date is required";
+        setEditFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleUpdateCampaign = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!validateEditForm() || !editingCampaign) return;
+
+        try {
+            setIsEditingCampaign(true);
+            const campaignData = {
+                name: editFormData.name.trim(),
+                description: editFormData.description.trim(),
+                goal: parseFloat(editFormData.goal),
+                endDate: editFormData.endDate,
+                category: editFormData.category.trim() || undefined
+            };
+
+            await donationService.updateCampaign(editingCampaign._id, campaignData);
+            toastHook({
+                title: "Campaign updated",
+                description: "Campaign has been successfully updated",
+                variant: "success",
+            });
+            
+            setIsEditDialogOpen(false);
+            setEditingCampaign(null);
+            window.location.reload();
+        } catch (err: any) {
+            const errorInfo = handleApiError(err);
+            toastHook({
+                title: "Error",
+                description: `Failed to update campaign: ${errorInfo.message}`,
+                variant: "destructive",
+            });
+        } finally {
+            setIsEditingCampaign(false);
+        }
+    };
+
+    const handleDeleteCampaign = async (campaignId: string) => {
+        try {
+            await donationService.deleteCampaign(campaignId);
+            toastHook({
+                title: "Campaign deleted",
+                description: "Campaign has been successfully deleted",
+                variant: "success",
+            });
+            window.location.reload();
+        } catch (err: any) {
+            const errorInfo = handleApiError(err);
+            toastHook({
+                title: "Error",
+                description: `Failed to delete campaign: ${errorInfo.message}`,
+                variant: "destructive",
+            });
+        }
     };
 
     if (loading) {
@@ -807,14 +906,17 @@ export function Donations() {
                                                 <MoreVertical className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
+                                        <DropdownMenuContent align="end" className="bg-popover">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleEditCampaign(campaign)}>
                                                 <Edit className="h-4 w-4 mr-2" />
                                                 Edit Campaign
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
-                                            <DropdownMenuItem className="text-destructive">
+                                            <DropdownMenuItem 
+                                                className="text-destructive"
+                                                onClick={() => handleDeleteCampaign(campaign._id)}
+                                            >
                                                 <Trash2 className="h-4 w-4 mr-2" />
                                                 Delete Campaign
                                             </DropdownMenuItem>
@@ -987,75 +1089,85 @@ export function Donations() {
                 </CardContent>
             </Card>
 
-            {/* Campaign Donors Dialog */}
+            {/* Campaign Donors Dialog - Redesigned */}
             <Dialog open={isDonorsDialogOpen} onOpenChange={setIsDonorsDialogOpen}>
                 <DialogContent 
-                    key={selectedCampaignDonors.length} // Add this to force re-render
+                    key={selectedCampaignDonors.length}
                     className="sm:max-w-[700px] max-w-[95vw] bento-card gradient-surface border-card-border/50" 
                     style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
                 >
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                            <Users className="h-5 w-5 text-primary" />
-                            Campaign Donors
-                        </DialogTitle>
-                        <DialogDescription className="text-muted-foreground">
-                            {selectedCampaignName}
-                        </DialogDescription>
+                    <DialogHeader className="pb-4 border-b border-card-border/20">
+                        <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                                <IndianRupee className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl font-semibold text-foreground">
+                                    Campaign Donors
+                                </DialogTitle>
+                                <DialogDescription className="text-muted-foreground mt-1">
+                                    {selectedCampaignName} • {selectedCampaignDonors.length} donors
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
                     
                     <div className="mt-4">
                         {loadingDonors ? (
-                            <div className="flex items-center justify-center py-12">
+                            <div className="flex items-center justify-center py-16">
                                 <div className="text-center">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                                    <p className="text-muted-foreground">Loading donors...</p>
+                                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    </div>
+                                    <p className="text-muted-foreground font-medium">Loading donors...</p>
                                 </div>
                             </div>
                         ) : selectedCampaignDonors.length === 0 ? (
-                            <div className="flex items-center justify-center py-12">
+                            <div className="flex items-center justify-center py-16">
                                 <div className="text-center">
-                                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                    <p className="text-muted-foreground mb-2">No donors yet</p>
-                                    <p className="text-sm text-muted-foreground">This campaign hasn't received any donations.</p>
+                                    <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                                        <Users className="h-10 w-10 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-foreground mb-2">No donors yet</h3>
+                                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">This campaign hasn't received any donations. Share the campaign to get more donors.</p>
                                 </div>
                             </div>
                         ) : (
                             <>
-                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-2 custom-scrollbar">
                                     {selectedCampaignDonors.map((donor, index) => (
                                         <div
                                             key={`donor-${donor._id}-${index}`}
-                                            className="flex items-center justify-between p-4 rounded-lg border border-card-border/50 hover:bg-accent/30 transition-smooth"
+                                            className="flex items-center justify-between p-4 rounded-xl bg-accent/30 border border-card-border/30 hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 group animate-fade-in"
+                                            style={{ animationDelay: `${index * 50}ms` }}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="w-12 h-12">
-                                                    <AvatarImage 
-                                                        src={donor.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${donor.name}`} 
-                                                        alt={donor.name} 
-                                                    />
-                                                    <AvatarFallback className="bg-primary/10 text-primary">
-                                                        {donor.name.split(' ').map(n => n[0]).join('')}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/50 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-background shadow-sm">
+                                                    {donor.avatar ? (
+                                                        <img src={donor.avatar} alt={donor.name} className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-lg font-semibold text-primary">
+                                                            {donor.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div>
-                                                    <h4 className="font-semibold text-foreground">{donor.name}</h4>
+                                                    <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">{donor.name}</h4>
                                                     <p className="text-sm text-muted-foreground">{donor.email}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {formatDate(donor.date)}
-                                                    </p>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">{formatDate(donor.date)}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-semibold text-lg text-primary">
-                                                    {formatCurrency(donor.amount)}
-                                                </p>
+                                                <p className="font-bold text-xl text-primary">{formatCurrency(donor.amount)}</p>
+                                                <Badge variant="outline" className="bg-success/10 text-success border-success/30 mt-1">
+                                                    Donated
+                                                </Badge>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                                 
-                                <div className="flex justify-end gap-3 pt-4 mt-4">
+                                <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-card-border/20">
                                     <Button
                                         variant="outline"
                                         onClick={() => setIsDonorsDialogOpen(false)}
@@ -1067,6 +1179,117 @@ export function Donations() {
                             </>
                         )}
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Campaign Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-[500px] bento-card gradient-surface border-card-border/50" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                    <DialogHeader className="pb-4 border-b border-card-border/20">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                                <Edit className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl font-semibold text-foreground">Edit Campaign</DialogTitle>
+                                <DialogDescription className="text-muted-foreground">
+                                    Update campaign details below
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+                    
+                    <form onSubmit={handleUpdateCampaign} className="space-y-5 mt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-name" className="text-sm font-medium text-foreground">Campaign Name *</Label>
+                            <Input
+                                id="edit-name"
+                                placeholder="Enter campaign name"
+                                value={editFormData.name}
+                                onChange={(e) => handleEditInputChange("name", e.target.value)}
+                                className={`border-card-border/50 focus:border-primary ${editFormErrors.name ? "border-destructive" : ""}`}
+                            />
+                            {editFormErrors.name && <p className="text-sm text-destructive">{editFormErrors.name}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-description" className="text-sm font-medium text-foreground">Description *</Label>
+                            <Textarea
+                                id="edit-description"
+                                placeholder="Describe your campaign"
+                                value={editFormData.description}
+                                onChange={(e) => handleEditInputChange("description", e.target.value)}
+                                className={`min-h-[100px] border-card-border/50 focus:border-primary resize-none ${editFormErrors.description ? "border-destructive" : ""}`}
+                            />
+                            {editFormErrors.description && <p className="text-sm text-destructive">{editFormErrors.description}</p>}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-goal" className="text-sm font-medium text-foreground">Goal Amount (₹) *</Label>
+                                <Input
+                                    id="edit-goal"
+                                    type="number"
+                                    placeholder="100000"
+                                    value={editFormData.goal}
+                                    onChange={(e) => handleEditInputChange("goal", e.target.value)}
+                                    className={`border-card-border/50 focus:border-primary ${editFormErrors.goal ? "border-destructive" : ""}`}
+                                />
+                                {editFormErrors.goal && <p className="text-sm text-destructive">{editFormErrors.goal}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-endDate" className="text-sm font-medium text-foreground">End Date *</Label>
+                                <Input
+                                    id="edit-endDate"
+                                    type="date"
+                                    value={editFormData.endDate}
+                                    onChange={(e) => handleEditInputChange("endDate", e.target.value)}
+                                    className={`border-card-border/50 focus:border-primary ${editFormErrors.endDate ? "border-destructive" : ""}`}
+                                />
+                                {editFormErrors.endDate && <p className="text-sm text-destructive">{editFormErrors.endDate}</p>}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-category" className="text-sm font-medium text-foreground">Category (Optional)</Label>
+                            <Input
+                                id="edit-category"
+                                placeholder="e.g., Scholarship, Infrastructure"
+                                value={editFormData.category}
+                                onChange={(e) => handleEditInputChange("category", e.target.value)}
+                                className="border-card-border/50 focus:border-primary"
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-card-border/20">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsEditDialogOpen(false)}
+                                disabled={isEditingCampaign}
+                                className="border-card-border/50"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isEditingCampaign}
+                                className="gradient-primary text-primary-foreground hover:shadow-purple"
+                            >
+                                {isEditingCampaign ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Updating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Update Campaign
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>
