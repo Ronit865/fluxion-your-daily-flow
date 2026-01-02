@@ -2,31 +2,14 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/ApiServices";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AlumniCard } from "@/components/admin/AlumniCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -59,22 +42,15 @@ import { Label } from "@/components/ui/label";
 import {
   Search,
   Plus,
-  MoreHorizontal,
   UserCheck,
   UserX,
-  Mail,
-  MapPin,
-  Building,
-  Calendar,
   Loader2,
   Upload,
   FileText,
   X,
   Edit,
-  Trash2,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { Transform } from "stream";
 
 // Define the User interface based on your backend model
 interface User {
@@ -297,38 +273,6 @@ export function Alumni() {
     deleteUserMutation.mutate(userToDelete._id);
   };
 
-  const getStatusBadge = (isVerified: boolean) => {
-    if (isVerified) {
-      return (
-        <Badge className="bg-success/10 text-success border-success/20">
-          Verified
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="outline" className="border-warning text-warning">
-          Pending
-        </Badge>
-      );
-    }
-  };
-
-  const getRoleBadge = (role: string) => {
-    const roleColors = {
-      admin: "bg-destructive/10 text-destructive border-destructive/20",
-      alumni: "bg-primary/10 text-primary border-primary/20",
-      student: "bg-success/10 text-success border-success/20",
-      faculty: "bg-warning/10 text-warning border-warning/20",
-    };
-
-    const colorClass = roleColors[role?.toLowerCase() as keyof typeof roleColors] || "bg-muted/10 text-muted-foreground border-muted/20";
-
-    return (
-      <Badge className={colorClass}>
-        {role || "User"}
-      </Badge>
-    );
-  };
 
   // File upload handlers
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -772,166 +716,71 @@ export function Alumni() {
         </div>
       </div>
 
-      {/* Alumni Table */}
-      <Card className="bento-card gradient-surface border-card-border/50">
-        <CardHeader className="p-4 sm:p-6">
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <div>
-              <CardTitle className="text-base sm:text-lg">Alumni Directory</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Manage and verify alumni profiles ({filteredAlumni.length} of{" "}
-                {totalUsers} alumni)
-              </CardDescription>
+      {/* Alumni Directory */}
+      <div className="space-y-4">
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Alumni Directory</h2>
+            <p className="text-sm text-muted-foreground">
+              {filteredAlumni.length} of {totalUsers} users
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search alumni..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full sm:w-64"
+              />
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <div className="relative flex-1 sm:flex-none">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search alumni..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full sm:w-48 md:w-64"
-                />
-              </div>
-              <div className="flex gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-xs sm:text-sm flex-1 sm:flex-none">
-                      Status: {selectedStatus === "all" ? "All" : selectedStatus}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-popover">
-                    <DropdownMenuItem onClick={() => setSelectedStatus("all")}>
-                      All
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setSelectedStatus("verified")}
-                    >
-                      Verified
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setSelectedStatus("pending")}
-                    >
-                      Pending
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button variant="outline" size="sm" onClick={() => refetch()} className="text-xs sm:text-sm">
-                  Refresh
-                </Button>
-              </div>
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm flex-1 sm:flex-none">
+                    Status: {selectedStatus === "all" ? "All" : selectedStatus}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-popover">
+                  <DropdownMenuItem onClick={() => setSelectedStatus("all")}>
+                    All
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedStatus("verified")}>
+                    Verified
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedStatus("pending")}>
+                    Pending
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="outline" size="sm" onClick={() => refetch()} className="text-xs sm:text-sm">
+                Refresh
+              </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0 sm:p-6 sm:pt-0">
-          <div className="overflow-x-auto">
-            <Table className="min-w-[600px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs sm:text-sm whitespace-nowrap">Alumni</TableHead>
-                  <TableHead className="text-xs sm:text-sm whitespace-nowrap hidden sm:table-cell">Graduation</TableHead>
-                  <TableHead className="text-xs sm:text-sm whitespace-nowrap hidden md:table-cell">Course</TableHead>
-                  <TableHead className="text-xs sm:text-sm whitespace-nowrap hidden lg:table-cell">Phone</TableHead>
-                  <TableHead className="text-xs sm:text-sm whitespace-nowrap">Role</TableHead>
-                  <TableHead className="text-xs sm:text-sm text-right whitespace-nowrap">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAlumni.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center py-8 text-muted-foreground text-sm"
-                    >
-                      No alumni found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredAlumni.map((alumni, index) => (
-                    <TableRow
-                      key={alumni._id}
-                      className="hover:bg-accent/30 transition-smooth animate-fade-in"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <TableCell className="p-2 sm:p-4">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-                            <AvatarImage src={alumni.avatar} alt={alumni.name} />
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
-                              {alumni.name
-                                ?.split(" ")
-                                .map((n) => n[0])
-                                .join("") || "UN"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">
-                              {alumni.name || "Unknown"}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">
-                              {alumni.email}
-                            </p>
-                            {/* Mobile: Show graduation year below name */}
-                            <p className="text-xs text-muted-foreground sm:hidden">
-                              {alumni.graduationYear || "N/A"}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell p-2 sm:p-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                          <span className="font-medium text-xs sm:text-sm">
-                            {alumni.graduationYear || "N/A"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell p-2 sm:p-4">
-                        <div className="flex items-center gap-2">
-                          <Building className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                          <span className="font-medium text-xs sm:text-sm">
-                            {alumni.course || "N/A"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell p-2 sm:p-4">
-                        <span className="text-xs sm:text-sm">{alumni.phone || "N/A"}</span>
-                      </TableCell>
-                      <TableCell className="p-2 sm:p-4">
-                        {getRoleBadge(alumni.role || "")}
-                      </TableCell>
-                      <TableCell className="text-right p-2 sm:p-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-popover">
-                            <DropdownMenuLabel className="text-xs sm:text-sm">Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEditUser(alumni)} className="text-xs sm:text-sm">
-                              <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-destructive text-xs sm:text-sm"
-                              onClick={() => handleDeleteUser(alumni)}
-                            >
-                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                              Remove
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+        </div>
+
+        {/* Alumni Cards Grid */}
+        {filteredAlumni.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-sm">No alumni found</p>
           </div>
-        </CardContent>
-      </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredAlumni.map((alumni, index) => (
+              <AlumniCard
+                key={alumni._id}
+                alumni={alumni}
+                onEdit={handleEditUser}
+                onDelete={handleDeleteUser}
+                index={index}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
