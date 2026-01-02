@@ -582,8 +582,74 @@ export function Dashboard() {
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Donations */}
+        {/* Pending Jobs Approval */}
         <Card className="lg:col-span-2 border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-primary" />
+                  Pending Approval
+                </CardTitle>
+                <CardDescription>Jobs awaiting verification</CardDescription>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {pendingJobs.length} pending
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {pendingJobs.length > 0 ? (
+              <div className="space-y-3">
+                {pendingJobs.map((job: any, index: number) => (
+                  <div 
+                    key={job._id || index} 
+                    className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
+                    onClick={() => navigate('/admin/jobs')}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {job.title || 'Untitled Job'}
+                        </p>
+                        <Badge variant="outline" className="text-xs flex-shrink-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                          Pending
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {job.company || 'Company not specified'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                        <span>{job.location || 'Remote'}</span>
+                        <span>•</span>
+                        <span>{job.type || 'Full-time'}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-3" />
+                  </div>
+                ))}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2"
+                  onClick={() => navigate('/admin/jobs')}
+                >
+                  Review All Jobs <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            ) : (
+              <div className="h-48 flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <Briefcase className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No pending approvals</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Donations */}
+        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -607,19 +673,19 @@ export function Dashboard() {
                     className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                         {(donor.name || 'A')[0].toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
-                          {donor.name || 'Anonymous Donor'}
+                          {donor.name || 'Anonymous'}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {donor.campaign || 'General Fund'}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-3">
+                    <div className="text-right flex-shrink-0 ml-2">
                       <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(donor.amount || 0)}
                       </p>
@@ -635,71 +701,6 @@ export function Dashboard() {
                 <div className="text-center text-muted-foreground">
                   <DollarSign className="w-10 h-10 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">No recent donations</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Pending Jobs Approval */}
-        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-primary" />
-                  Pending Approval
-                </CardTitle>
-                <CardDescription>Jobs awaiting verification</CardDescription>
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {pendingJobs.length} pending
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {pendingJobs.length > 0 ? (
-              <div className="space-y-3">
-                {pendingJobs.map((job: any, index: number) => (
-                  <div 
-                    key={job._id || index} 
-                    className="p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/admin/jobs')}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {job.title || 'Untitled Job'}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {job.company || 'Company not specified'}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="text-xs flex-shrink-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">
-                        Pending
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                      <span>{job.location || 'Remote'}</span>
-                      <span>•</span>
-                      <span>{job.type || 'Full-time'}</span>
-                    </div>
-                  </div>
-                ))}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full mt-2"
-                  onClick={() => navigate('/admin/jobs')}
-                >
-                  Review All Jobs <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            ) : (
-              <div className="h-48 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <Briefcase className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No pending approvals</p>
                 </div>
               </div>
             )}
