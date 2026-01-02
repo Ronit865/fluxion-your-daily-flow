@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { jobService } from '@/services/ApiServices';
 import { useToast } from '@/hooks/use-toast';
-import { Briefcase, MapPin, DollarSign, Check, Trash2, Clock, AlertCircle, CheckCircle, Calendar, Users, Loader2, Mail, GraduationCap } from 'lucide-react';
+import { Briefcase, MapPin, IndianRupee, Check, Trash2, Clock, AlertCircle, CheckCircle, Calendar, Users, Loader2, Mail, GraduationCap } from 'lucide-react';
 
 interface Job {
   _id: string;
@@ -552,8 +552,8 @@ function JobCard({ job, onVerify, onDelete, onViewApplicants, actionLoading }: J
           )}
           {job.salary && (
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-foreground font-medium">${job.salary.toLocaleString()}/yr</span>
+              <IndianRupee className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">₹{job.salary.toLocaleString()}/yr</span>
             </div>
           )}
           {job.jobType && (

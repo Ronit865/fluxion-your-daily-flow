@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Users, Calendar, DollarSign, TrendingUp, UserCheck, Mail, Award, 
+  Users, Calendar, IndianRupee, TrendingUp, UserCheck, Mail, Award, 
   ArrowUpRight, Loader2, GraduationCap, Briefcase, ArrowRight, 
   Activity, Clock, ChevronRight, Sparkles
 } from "lucide-react";
@@ -204,7 +204,7 @@ export function Dashboard() {
               title: donor.name || 'Anonymous',
               description: `Donated ${formatCurrency(donor.amount)}`,
               time: donor.donatedAt || new Date(),
-              icon: DollarSign,
+              icon: IndianRupee,
               color: 'text-pink-500',
               bgColor: 'bg-pink-500/10',
             });
@@ -348,7 +348,7 @@ export function Dashboard() {
   const quickActions = [
     { label: 'Alumni', icon: Users, route: '/admin/alumni', color: 'from-emerald-500 to-teal-500' },
     { label: 'Events', icon: Calendar, route: '/admin/events', color: 'from-blue-500 to-cyan-500' },
-    { label: 'Donations', icon: DollarSign, route: '/admin/donations', color: 'from-pink-500 to-rose-500' },
+    { label: 'Donations', icon: IndianRupee, route: '/admin/donations', color: 'from-pink-500 to-rose-500' },
     { label: 'Jobs', icon: Briefcase, route: '/admin/jobs', color: 'from-violet-500 to-purple-500' },
     { label: 'Messages', icon: Mail, route: '/admin/communications', color: 'from-amber-500 to-orange-500' },
   ];
@@ -412,7 +412,7 @@ export function Dashboard() {
               <p className="stats-card-number">{formatCurrency(donationStats?.totalRaised || 0)}</p>
             </div>
             <div className="p-2 rounded-xl bg-white/20 dark:bg-white/10">
-              <DollarSign className="w-5 h-5" />
+              <IndianRupee className="w-5 h-5" />
             </div>
           </div>
           <div className="flex items-center gap-1.5 mt-3 text-xs opacity-80">
@@ -654,7 +654,7 @@ export function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-primary" />
+                  <IndianRupee className="w-5 h-5 text-primary" />
                   Recent Donations
                 </CardTitle>
                 <CardDescription>Latest contributions</CardDescription>
@@ -699,7 +699,7 @@ export function Dashboard() {
             ) : (
               <div className="h-48 flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
-                  <DollarSign className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <IndianRupee className="w-10 h-10 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">No recent donations</p>
                 </div>
               </div>
