@@ -232,37 +232,39 @@ export default function Alumni() {
     setProfileDialogOpen(true);
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        {/* Header Skeleton */}
-        <div>
-          <Skeleton className="h-9 w-64 mb-2" />
-          <Skeleton className="h-5 w-96" />
-        </div>
-
-        {/* Search and Filters Skeleton */}
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <Skeleton className="h-10 flex-1" />
-          <div className="flex gap-3">
-            <Skeleton className="h-10 w-[160px]" />
-            <Skeleton className="h-10 w-[140px]" />
-            <Skeleton className="h-10 w-10" />
+  // Data-only skeleton component - static UI renders immediately
+  const AlumniCardsSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <div 
+          key={i} 
+          className="rounded-2xl bg-card border border-border/50 p-4 space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300"
+          style={{ animationDelay: `${i * 40}ms` }}
+        >
+          <div className="flex gap-2.5">
+            <Skeleton className="h-12 w-12 sm:h-14 sm:w-14 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3.5 sm:h-4 w-24 sm:w-32" />
+              <Skeleton className="h-2.5 sm:h-3 w-20 sm:w-24" />
+            </div>
           </div>
+          <div className="space-y-2">
+            <Skeleton className="h-2.5 sm:h-3 w-12" />
+            <Skeleton className="h-3.5 sm:h-4 w-28 sm:w-36" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-2.5 sm:h-3 w-10" />
+            <Skeleton className="h-2.5 sm:h-3 w-36 sm:w-44" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-2.5 sm:h-3 w-14" />
+            <Skeleton className="h-3 sm:h-3.5 w-20 sm:w-24" />
+          </div>
+          <Skeleton className="h-8 sm:h-9 w-full rounded-lg mt-2" />
         </div>
-
-        <Skeleton className="h-5 w-48" />
-
-        {/* Alumni Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-80 rounded-lg" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+      ))}
+    </div>
+  );
 
   // Error state
   if (error && !alumniResponse) {
@@ -348,8 +350,11 @@ export default function Alumni() {
         Showing {filteredAlumni.length} of {alumniData.length} verified alumni
       </div>
 
-      {/* Alumni Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Alumni Grid - Show skeleton or data */}
+      {isLoading ? (
+        <AlumniCardsSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredAlumni.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <p className="text-muted-foreground text-lg">
@@ -456,9 +461,10 @@ export default function Alumni() {
           ))
         )}
       </div>
+      )}
 
       {/* Load More */}
-      {filteredAlumni.length > 0 && (
+      {!isLoading && filteredAlumni.length > 0 && (
         <div className="text-center pt-6">
           <Button variant="outline" size="lg" onClick={() => refetch()}>
             Refresh Data

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { eventService } from "@/services/ApiServices";
 import { userService } from "@/services/ApiServices";
+import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 
 interface Event {
     _id: string;
@@ -44,12 +45,27 @@ export default function Events() {
 
     const fetchEvents = async () => {
         try {
+            // Check cache first
+            const cachedEvents = cache.get<Event[]>(CACHE_KEYS.USER_EVENTS);
+            if (cachedEvents) {
+                setEvents(cachedEvents);
+                await checkRegisteredEvents(cachedEvents);
+                setLoading(false);
+                
+                // Refresh in background if cache is stale
+                if (cache.getTTL(CACHE_KEYS.USER_EVENTS) < CACHE_TTL.SHORT) {
+                    refreshEventsInBackground();
+                }
+                return;
+            }
+
             setLoading(true);
             setError(null);
             const response = await eventService.getEvents();
 
             if (response.success) {
                 setEvents(response.data);
+                cache.set(CACHE_KEYS.USER_EVENTS, response.data, CACHE_TTL.MEDIUM);
                 await checkRegisteredEvents(response.data);
             } else {
                 setError(response.message || "Failed to fetch events");
@@ -61,6 +77,19 @@ export default function Events() {
             toast.error("Failed to fetch events");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const refreshEventsInBackground = async () => {
+        try {
+            const response = await eventService.getEvents();
+            if (response.success) {
+                setEvents(response.data);
+                cache.set(CACHE_KEYS.USER_EVENTS, response.data, CACHE_TTL.MEDIUM);
+                await checkRegisteredEvents(response.data);
+            }
+        } catch (error) {
+            console.error("Background refresh failed:", error);
         }
     };
 
@@ -337,30 +366,43 @@ export default function Events() {
         </div>
     );
 
-    if (loading) {
-        return (
-            <div className="space-y-6 animate-fade-in">
-                <div>
-                    <Skeleton className="h-9 w-48 mb-2" />
-                    <Skeleton className="h-5 w-96" />
+    // Data-only skeleton - static UI renders immediately
+    const EventCardsSkeleton = () => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div 
+                    key={i} 
+                    className="rounded-2xl bg-card border border-border/50 p-4 sm:p-5 space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300"
+                    style={{ animationDelay: `${i * 40}ms` }}
+                >
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 sm:h-5 w-3/4" />
+                        <Skeleton className="h-5 sm:h-6 w-16 sm:w-20 rounded-full" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-4/5" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        {[0, 1, 2, 3].map((j) => (
+                            <div key={j} className="flex items-center gap-2">
+                                <Skeleton className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded" />
+                                <Skeleton className="h-3 sm:h-4 w-14 sm:w-20" />
+                            </div>
+                        ))}
+                    </div>
+                    <Skeleton className="h-9 sm:h-10 w-full rounded-lg" />
                 </div>
-                <Skeleton className="h-10 max-w-md" />
-                <Skeleton className="h-7 w-56" />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(6)].map((_, i) => (
-                        <Skeleton key={i} className="h-80 rounded-lg" />
-                    ))}
-                </div>
-            </div>
-        );
-    }
+            ))}
+        </div>
+    );
 
     if (error) {
         return (
             <div className="space-y-6 animate-fade-in">
                 <div>
-                    <h1 className="text-3xl font-bold gradient-text mb-2">Events</h1>
-                    <p className="text-muted-foreground">Discover upcoming events and connect with fellow alumni</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-1 sm:mb-2">Alumni Events</h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">Discover upcoming events and connect with fellow alumni</p>
                 </div>
                 <div className="text-center py-12">
                     <Card className="border-destructive/50 bg-destructive/10">
@@ -377,14 +419,14 @@ export default function Events() {
     }
 
     return (
-        <div className="space-y-6 sm:space-y-8 animate-fade-in">
-            {/* Header */}
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+            {/* Header - Always visible */}
             <div>
                 <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-1 sm:mb-2">Alumni Events</h1>
                 <p className="text-sm sm:text-base text-muted-foreground">Discover upcoming events and connect with fellow alumni</p>
             </div>
 
-            {/* Search */}
+            {/* Search - Always visible */}
             <div className="relative w-full sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
@@ -399,21 +441,23 @@ export default function Events() {
             <div>
                 <div className="flex items-center gap-2 mb-4">
                     <CalendarDays className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-semibold text-foreground">
-                        Active Events ({activeEvents.length})
+                    <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+                        Active Events {!loading && `(${activeEvents.length})`}
                     </h2>
                 </div>
 
-                {activeEvents.length === 0 ? (
+                {loading ? (
+                    <EventCardsSkeleton />
+                ) : activeEvents.length === 0 ? (
                     <Card className="border-card-border/50">
-                        <CardContent className="pt-12 pb-12 text-center">
-                            <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <p className="text-muted-foreground">No active events available.</p>
+                        <CardContent className="pt-10 pb-10 sm:pt-12 sm:pb-12 text-center">
+                            <CalendarDays className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
+                            <p className="text-sm sm:text-base text-muted-foreground">No active events available.</p>
                         </CardContent>
                     </Card>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             {paginatedActiveEvents.map((event, index) => (
                                 <EventCard key={event._id} event={event} index={index} />
                             ))}
@@ -431,39 +475,41 @@ export default function Events() {
             </div>
 
             {/* Past Events Section */}
-            <div>
-                <div className="flex items-center gap-2 mb-4">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    <h2 className="text-xl font-semibold text-foreground">
-                        Past Events ({pastEvents.length})
-                    </h2>
-                </div>
+            {!loading && (
+                <div>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Clock className="h-5 w-5 text-muted-foreground" />
+                        <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+                            Past Events ({pastEvents.length})
+                        </h2>
+                    </div>
 
-                {pastEvents.length === 0 ? (
-                    <Card className="border-card-border/50">
-                        <CardContent className="pt-12 pb-12 text-center">
-                            <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <p className="text-muted-foreground">No past events to display.</p>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {paginatedPastEvents.map((event, index) => (
-                                <EventCard key={event._id} event={event} index={index} />
-                            ))}
-                        </div>
-                        {pastEventsTotalPages > 1 && (
-                            <PaginationControls
-                                currentPage={pastEventPage}
-                                totalPages={pastEventsTotalPages}
-                                onPrevious={() => setPastEventPage(p => Math.max(0, p - 1))}
-                                onNext={() => setPastEventPage(p => Math.min(pastEventsTotalPages - 1, p + 1))}
-                            />
-                        )}
-                    </>
-                )}
-            </div>
+                    {pastEvents.length === 0 ? (
+                        <Card className="border-card-border/50">
+                            <CardContent className="pt-10 pb-10 sm:pt-12 sm:pb-12 text-center">
+                                <Clock className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
+                                <p className="text-sm sm:text-base text-muted-foreground">No past events to display.</p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                {paginatedPastEvents.map((event, index) => (
+                                    <EventCard key={event._id} event={event} index={index} />
+                                ))}
+                            </div>
+                            {pastEventsTotalPages > 1 && (
+                                <PaginationControls
+                                    currentPage={pastEventPage}
+                                    totalPages={pastEventsTotalPages}
+                                    onPrevious={() => setPastEventPage(p => Math.max(0, p - 1))}
+                                    onNext={() => setPastEventPage(p => Math.min(pastEventsTotalPages - 1, p + 1))}
+                                />
+                            )}
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

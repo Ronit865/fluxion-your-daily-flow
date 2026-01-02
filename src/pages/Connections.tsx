@@ -4,12 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { connectionService } from "@/services/ApiServices";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { UserProfileDialog } from "@/components/profile/UserProfileDialog";
+import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 
 export default function Connections() {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -106,40 +108,66 @@ export default function Connections() {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  // Data-only skeleton - static UI renders immediately
+  const ConnectionsSkeleton = () => (
+    <div className="rounded-2xl bg-card border border-border/50 p-4 sm:p-6">
+      <div className="space-y-2 mb-4 sm:mb-6">
+        <Skeleton className="h-5 sm:h-6 w-36 sm:w-48" />
+        <Skeleton className="h-3 sm:h-4 w-48 sm:w-64" />
       </div>
-    );
-  }
+      <div className="space-y-3 sm:space-y-4">
+        {[0, 1, 2].map((i) => (
+          <div 
+            key={i} 
+            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-border/50 rounded-lg animate-in fade-in slide-in-from-right-2 duration-300"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex-shrink-0" />
+            <div className="flex-1 space-y-1.5 sm:space-y-2 min-w-0">
+              <Skeleton className="h-3.5 sm:h-4 w-24 sm:w-32" />
+              <Skeleton className="h-2.5 sm:h-3 w-36 sm:w-48" />
+              <Skeleton className="h-2.5 sm:h-3 w-28 sm:w-40" />
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <Skeleton className="h-8 sm:h-9 w-20 sm:w-24 rounded-lg" />
+              <Skeleton className="h-8 sm:h-9 w-20 sm:w-24 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Header - Always visible */}
       <div>
-        <h1 className="text-3xl font-bold gradient-text mb-2">Connections</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-1 sm:mb-2">Connections</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Manage your alumni network connections
         </p>
       </div>
 
-      <Tabs defaultValue="requests" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="requests" className="gap-2 relative">
-            <UserPlus className="w-4 h-4" />
-            Requests
-            {pendingRequests.length > 0 && (
-              <Badge className="ml-1 px-1.5 min-w-[20px] h-5" variant="destructive">
-                {pendingRequests.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="connections" className="gap-2">
-            <UserCheck className="w-4 h-4" />
-            My Connections
-          </TabsTrigger>
-        </TabsList>
+      {/* Show skeleton or tabs content */}
+      {loading ? (
+        <ConnectionsSkeleton />
+      ) : (
+        <Tabs defaultValue="requests" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="requests" className="gap-1 sm:gap-2 text-xs sm:text-sm relative">
+              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Requests</span>
+              {pendingRequests.length > 0 && (
+                <Badge className="ml-1 px-1.5 min-w-[18px] h-4 sm:h-5 text-[10px] sm:text-xs" variant="destructive">
+                  {pendingRequests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="connections" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+              <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>My Connections</span>
+            </TabsTrigger>
+          </TabsList>
 
         {/* Pending Requests */}
         <TabsContent value="requests" className="space-y-4">
@@ -300,7 +328,8 @@ export default function Connections() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      )}
       
       {/* Chat Dialog */}
       <ChatDialog 

@@ -373,10 +373,6 @@ export function Donations() {
             
             const response = await donationService.getCampaignDonors(campaignId);
             
-            console.log("Full Response:", response); // Debug log
-            console.log("Response.data:", response?.data); // Debug log
-            console.log("Response.success:", response?.success); // Debug log
-            
             // Handle the response - check multiple possible formats
             const responseData = response?.data || response;
             const isSuccess = response?.success ?? (responseData && Array.isArray(responseData));
@@ -393,13 +389,11 @@ export function Donations() {
                         avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(donor.name || 'Anonymous')}`
                     }));
                     
-                    console.log("Transformed Donors:", transformedDonors); // Debug log
                     setSelectedCampaignDonors(transformedDonors);
                 } else {
                     setSelectedCampaignDonors([]);
                 }
             } else {
-                console.error("Unexpected response format:", response);
                 toastHook({
                     title: "Error",
                     description: "Unexpected response format from server",
@@ -520,35 +514,113 @@ export function Donations() {
 
     if (loading) {
         return (
-            <div className="space-y-8">
-                {/* Header Skeleton */}
-                <div className="flex justify-between items-start animate-fade-in">
-                    <div>
-                        <Skeleton className="h-9 w-56 mb-2" />
-                        <Skeleton className="h-5 w-96" />
+            <div className="space-y-6 animate-in fade-in duration-500">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="space-y-2">
+                        <Skeleton className="h-8 w-56 bg-muted/60" />
+                        <Skeleton className="h-4 w-80 bg-muted/60" />
                     </div>
-                    <Skeleton className="h-10 w-40" />
+                    <Skeleton className="h-10 w-40 rounded-lg bg-muted/60" />
                 </div>
 
-                {/* Stats Cards Skeleton */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {[...Array(4)].map((_, i) => (
-                        <Skeleton key={i} className="h-32 rounded-lg" />
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
+                    {[0, 1, 2, 3].map((i) => (
+                        <div 
+                            key={i} 
+                            className="rounded-2xl p-4 sm:p-5 bg-card/50 border border-border/50"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-3">
+                                    <Skeleton className="h-3 w-24 bg-muted/60" />
+                                    <Skeleton className="h-8 w-20 bg-muted/60" />
+                                    <Skeleton className="h-3 w-16 bg-muted/60" />
+                                </div>
+                                <Skeleton className="h-10 w-10 rounded-xl bg-muted/60" />
+                            </div>
+                        </div>
                     ))}
                 </div>
 
-                {/* Campaigns Cards Skeleton */}
-                <div>
-                    <Skeleton className="h-7 w-48 mb-4" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[...Array(6)].map((_, i) => (
-                            <Skeleton key={i} className="h-64 rounded-lg" />
+                {/* Featured Campaigns */}
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '200ms' }}>
+                    <Skeleton className="h-6 w-48 mb-4 bg-muted/60" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[0, 1, 2].map((i) => (
+                            <div 
+                                key={i} 
+                                className="rounded-2xl p-5 bg-card/50 border border-border/50 space-y-4"
+                                style={{ animationDelay: `${250 + i * 50}ms` }}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <Skeleton className="h-5 w-40 bg-muted/60" />
+                                    <Skeleton className="h-6 w-16 rounded-full bg-muted/60" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Skeleton className="h-3 w-full bg-muted/60" />
+                                    <Skeleton className="h-3 w-3/4 bg-muted/60" />
+                                </div>
+                                <Skeleton className="h-2 w-full rounded-full bg-muted/60" />
+                                <div className="flex justify-between">
+                                    <Skeleton className="h-4 w-24 bg-muted/60" />
+                                    <Skeleton className="h-4 w-16 bg-muted/60" />
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Recent Donations Skeleton */}
-                <Skeleton className="h-96 rounded-lg" />
+                {/* Campaigns Grid */}
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '350ms' }}>
+                    <Skeleton className="h-6 w-40 mb-4 bg-muted/60" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                            <div 
+                                key={i} 
+                                className="rounded-2xl p-5 bg-card/50 border border-border/50 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                                style={{ animationDelay: `${400 + i * 50}ms` }}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="space-y-2 flex-1">
+                                        <Skeleton className="h-5 w-3/4 bg-muted/60" />
+                                        <Skeleton className="h-3 w-1/2 bg-muted/60" />
+                                    </div>
+                                    <Skeleton className="h-8 w-8 rounded-lg bg-muted/60" />
+                                </div>
+                                <Skeleton className="h-2 w-full rounded-full bg-muted/60" />
+                                <div className="flex items-center justify-between">
+                                    <Skeleton className="h-4 w-28 bg-muted/60" />
+                                    <Skeleton className="h-4 w-20 bg-muted/60" />
+                                </div>
+                                <div className="flex items-center justify-between pt-2">
+                                    <Skeleton className="h-6 w-16 rounded-full bg-muted/60" />
+                                    <Skeleton className="h-8 w-24 rounded-lg bg-muted/60" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Recent Donations Table */}
+                <div className="rounded-2xl bg-card/50 border border-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '500ms' }}>
+                    <div className="p-4 border-b border-border/30">
+                        <Skeleton className="h-6 w-40 bg-muted/60" />
+                    </div>
+                    <div className="divide-y divide-border/30">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                            <div key={i} className="flex items-center gap-4 p-4">
+                                <Skeleton className="h-10 w-10 rounded-full bg-muted/60" />
+                                <div className="space-y-2 flex-1">
+                                    <Skeleton className="h-4 w-32 bg-muted/60" />
+                                    <Skeleton className="h-3 w-48 bg-muted/60" />
+                                </div>
+                                <Skeleton className="h-5 w-20 bg-muted/60" />
+                                <Skeleton className="h-6 w-20 rounded-full bg-muted/60" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }

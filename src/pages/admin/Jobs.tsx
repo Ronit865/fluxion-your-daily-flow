@@ -173,29 +173,67 @@ export function Jobs() {
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        {/* Header Skeleton */}
-        <div className="flex justify-between items-start animate-fade-in">
-          <div>
-            <Skeleton className="h-9 w-56 mb-2" />
-            <Skeleton className="h-5 w-96" />
+      <div className="space-y-6 animate-in fade-in duration-500">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-56 bg-muted/60" />
+            <Skeleton className="h-4 w-80 bg-muted/60" />
           </div>
         </div>
 
-        {/* Stats Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-lg" />
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
+          {[0, 1, 2].map((i) => (
+            <div 
+              key={i} 
+              className="rounded-2xl p-4 sm:p-5 bg-card/50 border border-border/50"
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-3">
+                  <Skeleton className="h-3 w-20 bg-muted/60" />
+                  <Skeleton className="h-8 w-16 bg-muted/60" />
+                </div>
+                <Skeleton className="h-10 w-10 rounded-xl bg-muted/60" />
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Tabs Skeleton */}
-        <Skeleton className="h-10 w-full" />
+        {/* Tabs */}
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '200ms' }}>
+          <Skeleton className="h-10 w-full rounded-lg bg-muted/60" />
+        </div>
 
-        {/* Events Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-80 rounded-lg" />
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div 
+              key={i} 
+              className="rounded-2xl p-5 bg-card/50 border border-border/50 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              style={{ animationDelay: `${300 + i * 50}ms` }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-3/4 bg-muted/60" />
+                  <Skeleton className="h-3 w-1/2 bg-muted/60" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-lg bg-muted/60" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full bg-muted/60" />
+                <Skeleton className="h-3 w-5/6 bg-muted/60" />
+              </div>
+              <div className="flex items-center gap-4 pt-2">
+                <Skeleton className="h-4 w-24 bg-muted/60" />
+                <Skeleton className="h-4 w-20 bg-muted/60" />
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <Skeleton className="h-6 w-16 rounded-full bg-muted/60" />
+                <Skeleton className="h-8 w-20 rounded-lg bg-muted/60" />
+              </div>
+            </div>
           ))}
         </div>
       </div>

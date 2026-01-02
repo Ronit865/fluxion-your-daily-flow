@@ -385,34 +385,69 @@ export function Alumni() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        {/* Header Skeleton */}
-        <div className="flex justify-between items-start animate-fade-in">
-          <div>
-            <Skeleton className="h-9 w-56 mb-2" />
-            <Skeleton className="h-5 w-96" />
+      <div className="space-y-6 animate-in fade-in duration-500">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-56 bg-muted/60" />
+            <Skeleton className="h-4 w-96 bg-muted/60" />
           </div>
-          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32 rounded-lg bg-muted/60" />
         </div>
 
-        {/* Stats Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-lg" />
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
+          {[0, 1, 2].map((i) => (
+            <div 
+              key={i} 
+              className="rounded-2xl p-4 sm:p-5 bg-card/50 border border-border/50"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-3">
+                  <Skeleton className="h-3 w-24 bg-muted/60" />
+                  <Skeleton className="h-8 w-20 bg-muted/60" />
+                  <Skeleton className="h-3 w-32 bg-muted/60" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-xl bg-muted/60" />
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Search and Filters Skeleton */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <Skeleton className="h-10 flex-1" />
+        {/* Search and Filters */}
+        <div className="flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '200ms' }}>
+          <Skeleton className="h-10 flex-1 rounded-lg bg-muted/60" />
           <div className="flex gap-3">
-            <Skeleton className="h-10 w-[140px]" />
-            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-[140px] rounded-lg bg-muted/60" />
+            <Skeleton className="h-10 w-10 rounded-lg bg-muted/60" />
           </div>
         </div>
 
-        {/* Table Skeleton */}
-        <Skeleton className="h-[600px] rounded-lg" />
+        {/* Table */}
+        <div className="rounded-2xl bg-card/50 border border-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '300ms' }}>
+          <div className="bg-muted/30 p-4 border-b border-border/30">
+            <div className="flex gap-8">
+              {['w-10', 'w-32', 'w-40', 'w-24', 'w-20', 'w-16'].map((width, i) => (
+                <Skeleton key={i} className={`h-4 ${width} bg-muted/60`} />
+              ))}
+            </div>
+          </div>
+          <div className="divide-y divide-border/30">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="flex items-center gap-8 p-4" style={{ animationDelay: `${400 + i * 30}ms` }}>
+                <Skeleton className="h-10 w-10 rounded-full bg-muted/60" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-32 bg-muted/60" />
+                  <Skeleton className="h-3 w-48 bg-muted/60" />
+                </div>
+                <Skeleton className="h-4 w-24 bg-muted/60" />
+                <Skeleton className="h-6 w-16 rounded-full bg-muted/60" />
+                <Skeleton className="h-6 w-16 rounded-full bg-muted/60" />
+                <Skeleton className="h-8 w-8 rounded-lg bg-muted/60" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

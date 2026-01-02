@@ -60,11 +60,7 @@ export default function PostJob() {
         requirements: requirementsArray.length > 0 ? requirementsArray : undefined,
       };
 
-      console.log('Submitting job data:', jobData); // Debug log
-
       const response = await jobService.addJob(jobData);
-
-      console.log('Job post response:', response); // Debug log
 
       if (response.success) {
         toast.success("Job posted successfully! Pending admin verification.");
@@ -73,7 +69,6 @@ export default function PostJob() {
         toast.error(response.message || "Failed to post job");
       }
     } catch (error: any) {
-      console.error('Job posting error:', error); // Debug log
       toast.error(error.message || "Failed to post job. Please try again.");
     } finally {
       setLoading(false);

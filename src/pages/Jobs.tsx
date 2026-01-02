@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { jobService } from "@/services/ApiServices";
 import PostJobDialog from "@/components/PostJobDialog";
+import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 import {
   Briefcase,
   MapPin,
@@ -76,19 +77,26 @@ export default function Jobs() {
   // Get current user ID from localStorage
   useEffect(() => {
     const userId = localStorage.getItem('userId');
-    console.log('Current User ID:', userId); // Debug log
     setCurrentUserId(userId);
   }, []);
 
   const fetchAllJobs = async () => {
     try {
+      // Check cache first
+      const cachedJobs = cache.get<Job[]>(CACHE_KEYS.USER_JOBS);
+      if (cachedJobs) {
+        const verifiedJobs = cachedJobs.filter((job: Job) => job.isVerified === true);
+        setAllJobs(verifiedJobs);
+        return;
+      }
+
       const response = await jobService.getAllJobs();
 
       if (response.success) {
-        // Ensure data is an array and filter only verified jobs
         const jobsData = Array.isArray(response.data) ? response.data : [];
-        console.log('Fetched Jobs:', jobsData); // Debug log
+        cache.set(CACHE_KEYS.USER_JOBS, jobsData, CACHE_TTL.MEDIUM);
         const verifiedJobs = jobsData.filter((job: Job) => job.isVerified === true);
+        setAllJobs(verifiedJobs);
         setAllJobs(verifiedJobs);
       } else {
         toast.error(response.message || "Failed to fetch jobs");
@@ -140,7 +148,6 @@ export default function Jobs() {
 
     try {
       const response = await jobService.applyForJob(jobId);
-      console.log('Apply Response:', response); // Debug log
 
       if (response.success) {
         toast.success("Application submitted successfully!");
@@ -165,7 +172,6 @@ export default function Jobs() {
 
     try {
       const response = await jobService.unapplyForJob(jobId);
-      console.log('Unapply Response:', response); // Debug log
 
       if (response.success) {
         toast.success("Application withdrawn successfully!");
@@ -221,19 +227,14 @@ export default function Jobs() {
       setLoadingApplicants(true);
       const response = await jobService.getJobApplicants(job._id);
 
-      console.log('Applicants API Response:', response); // Debug log
-
       if (response.success) {
-        // The backend returns job.applicants as response.data directly
         const applicantsData = Array.isArray(response.data) ? response.data : [];
-        console.log('Processed Applicants:', applicantsData); // Debug log
         setApplicants(applicantsData);
       } else {
         toast.error(response.message || "Failed to fetch applicants");
         setApplicants([]);
       }
     } catch (error: any) {
-      console.error('Error fetching applicants:', error); // Debug log
       toast.error(error.message || "Failed to load applicants");
       setApplicants([]);
     } finally {
@@ -251,14 +252,12 @@ export default function Jobs() {
 
   const hasApplied = (job: Job) => {
     if (!currentUserId || !job.applicants || !Array.isArray(job.applicants)) {
-      console.log('hasApplied check:', { currentUserId, applicants: job.applicants, jobId: job._id });
       return false;
     }
     const applied = job.applicants.some((applicant: any) => {
       const applicantId = typeof applicant === 'string' ? applicant : applicant._id || applicant.id;
       return applicantId === currentUserId;
     });
-    console.log('Job:', job.title, 'Applied:', applied, 'Applicants:', job.applicants);
     return applied;
   };
 
@@ -267,21 +266,43 @@ export default function Jobs() {
     setJobDetailsOpen(true);
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <Skeleton className="h-10 w-64 mb-6" />
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-64" />
-          ))}
+  // Data-only skeleton - static UI renders immediately  
+  const JobCardsSkeleton = () => (
+    <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <div 
+          key={i} 
+          className="rounded-2xl bg-card border border-border/50 p-4 sm:p-5 space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300"
+          style={{ animationDelay: `${i * 40}ms` }}
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 sm:h-5 w-3/4" />
+              <Skeleton className="h-3 sm:h-4 w-1/2" />
+            </div>
+            <Skeleton className="h-5 sm:h-6 w-14 sm:w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-5 sm:h-6 w-20 sm:w-24 rounded-full" />
+          <div className="space-y-2 sm:space-y-3">
+            {[0, 1, 2, 3].map((j) => (
+              <div key={j} className="flex items-center gap-2">
+                <Skeleton className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded" />
+                <Skeleton className="h-3 sm:h-4 w-20 sm:w-28" />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-1 sm:pt-2">
+            <Skeleton className="h-8 sm:h-9 flex-1 rounded-lg" />
+            <Skeleton className="h-8 sm:h-9 flex-1 rounded-lg" />
+          </div>
         </div>
-      </div>
-    );
-  }
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Header - Always visible */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Job Opportunities</h1>
@@ -295,19 +316,22 @@ export default function Jobs() {
         </Button>
       </div>
 
+      {/* Tabs - Always visible */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="all" className="text-xs sm:text-sm">All Jobs ({allJobs.length})</TabsTrigger>
-          <TabsTrigger value="posted" className="text-xs sm:text-sm">My Posted ({postedJobs.length})</TabsTrigger>
+          <TabsTrigger value="all" className="text-xs sm:text-sm">All Jobs {!loading && `(${allJobs.length})`}</TabsTrigger>
+          <TabsTrigger value="posted" className="text-xs sm:text-sm">My Posted {!loading && `(${postedJobs.length})`}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
-          {allJobs.length === 0 ? (
+        <TabsContent value="all" className="mt-4 sm:mt-6">
+          {loading ? (
+            <JobCardsSkeleton />
+          ) : allJobs.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Briefcase className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Jobs Available</h3>
-                <p className="text-muted-foreground text-center">
+              <CardContent className="flex flex-col items-center justify-center py-10 sm:py-12">
+                <Briefcase className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold mb-2">No Jobs Available</h3>
+                <p className="text-sm text-muted-foreground text-center">
                   There are no job postings at the moment. Check back later!
                 </p>
               </CardContent>

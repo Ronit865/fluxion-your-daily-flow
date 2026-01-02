@@ -256,19 +256,90 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-1">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-72" />
+      <div className="space-y-6 p-1 animate-in fade-in duration-500">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48 bg-muted/60" />
+            <Skeleton className="h-4 w-64 bg-muted/60" />
+          </div>
+          <Skeleton className="h-5 w-40 bg-muted/60" />
         </div>
+
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl" />
+          {[0, 1, 2, 3].map((i) => (
+            <div 
+              key={i} 
+              className="rounded-2xl p-4 sm:p-5 bg-card/50 border border-border/50 animate-in fade-in slide-in-from-bottom-2 duration-500"
+              style={{ animationDelay: `${i * 75}ms` }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-3">
+                  <Skeleton className="h-3 w-20 bg-muted/60" />
+                  <Skeleton className="h-8 w-16 bg-muted/60" />
+                  <Skeleton className="h-3 w-24 bg-muted/60" />
+                </div>
+                <Skeleton className="h-10 w-10 rounded-xl bg-muted/60" />
+              </div>
+            </div>
           ))}
         </div>
+
+        {/* Quick Actions */}
+        <div 
+          className="rounded-2xl bg-card/50 border border-border/50 p-6 animate-in fade-in slide-in-from-bottom-2 duration-500" 
+          style={{ animationDelay: '300ms' }}
+        >
+          <Skeleton className="h-5 w-32 mb-4 bg-muted/60" />
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex flex-col items-center gap-2 p-4">
+                <Skeleton className="h-12 w-12 rounded-xl bg-muted/60" />
+                <Skeleton className="h-3 w-12 bg-muted/60" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-80 rounded-2xl lg:col-span-2" />
-          <Skeleton className="h-80 rounded-2xl" />
+          <div 
+            className="lg:col-span-2 rounded-2xl bg-card/50 border border-border/50 p-6 animate-in fade-in slide-in-from-bottom-2 duration-500" 
+            style={{ animationDelay: '400ms' }}
+          >
+            <Skeleton className="h-5 w-40 mb-4 bg-muted/60" />
+            <div className="space-y-3">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-secondary/30">
+                  <Skeleton className="h-14 w-14 rounded-xl bg-muted/60" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40 bg-muted/60" />
+                    <Skeleton className="h-3 w-28 bg-muted/60" />
+                  </div>
+                  <Skeleton className="h-6 w-16 rounded-full bg-muted/60" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div 
+            className="rounded-2xl bg-card/50 border border-border/50 p-6 animate-in fade-in slide-in-from-bottom-2 duration-500" 
+            style={{ animationDelay: '500ms' }}
+          >
+            <Skeleton className="h-5 w-36 mb-4 bg-muted/60" />
+            <div className="space-y-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-3 p-2">
+                  <Skeleton className="h-9 w-9 rounded-full bg-muted/60" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-3 w-28 bg-muted/60" />
+                    <Skeleton className="h-3 w-20 bg-muted/60" />
+                  </div>
+                  <Skeleton className="h-3 w-12 bg-muted/60" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

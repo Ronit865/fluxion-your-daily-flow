@@ -3,10 +3,11 @@ import { BentoCard } from "@/components/ui/bento-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService, eventService, userService, jobService, donationService, connectionService, communicationService } from "@/services/ApiServices";
 import { toast } from "sonner";
+import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 
 interface DashboardStats {
   totalAlumni: number;
@@ -84,9 +85,35 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (forceRefresh = false) => {
     try {
+      // Check cache first for instant loading
+      const cachedData = cache.get<{
+        stats: typeof stats;
+        recentEvents: typeof recentEvents;
+        featuredAlumni: typeof featuredAlumni;
+        recentJobs: typeof recentJobs;
+        recentPosts: typeof recentPosts;
+        donationStats: typeof donationStats;
+      }>(CACHE_KEYS.DASHBOARD_DATA);
+
+      if (cachedData && !forceRefresh) {
+        // Use cached data immediately
+        setStats(cachedData.stats);
+        setRecentEvents(cachedData.recentEvents);
+        setFeaturedAlumni(cachedData.featuredAlumni);
+        setRecentJobs(cachedData.recentJobs);
+        setRecentPosts(cachedData.recentPosts);
+        setDonationStats(cachedData.donationStats);
+        setLoading(false);
+        
+        // Refresh in background if cache is older than 2 minutes
+        if (cache.getTTL(CACHE_KEYS.DASHBOARD_DATA) < CACHE_TTL.MEDIUM - 120) {
+          fetchDashboardData(true);
+        }
+        return;
+      }
+
       setLoading(true);
 
       // Fetch alumni data
@@ -162,13 +189,12 @@ export default function Dashboard() {
             : 0;
         }
       } catch (error) {
-        console.error("Error fetching connections:", error);
+        // silently handle error
       }
 
       // Fetch recent posts
       try {
         const postsResponse = await communicationService.getAllPosts();
-        console.log('Posts Response:', postsResponse);
         
         // Handle different possible response structures
         let allPosts = [];
@@ -182,24 +208,33 @@ export default function Dashboard() {
           allPosts = postsResponse;
         }
         
-        console.log('Processed Posts:', allPosts);
         setRecentPosts(allPosts.slice(0, 3));
       } catch (error) {
-        console.error("Error fetching posts:", error);
         setRecentPosts([]);
       }
 
-      setStats({
+      const newStats = {
         totalAlumni: verifiedAlumni.length,
         totalEvents: allEvents.length,
         activeEvents: activeEvents.length,
         totalDonations: donationAmount,
         totalJobs: jobs.filter((job: any) => job.isVerified).length,
         totalConnections: connectionsCount
-      });
+      };
 
+      setStats(newStats);
       setRecentEvents(upcomingEvents);
       setFeaturedAlumni(featured);
+
+      // Cache the dashboard data for faster subsequent loads
+      cache.set(CACHE_KEYS.DASHBOARD_DATA, {
+        stats: newStats,
+        recentEvents: upcomingEvents,
+        featuredAlumni: featured,
+        recentJobs: jobs.filter((job: any) => job.isVerified).slice(0, 5),
+        recentPosts: recentPosts,
+        donationStats: donationStats
+      }, CACHE_TTL.MEDIUM);
 
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
@@ -226,51 +261,87 @@ export default function Dashboard() {
       .toUpperCase();
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        {/* Hero Section Skeleton */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-8">
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-3/4 bg-white/20" />
-            <Skeleton className="h-6 w-full max-w-2xl bg-white/20" />
-            <div className="flex gap-4">
-              <Skeleton className="h-12 w-40 bg-white/20" />
-              <Skeleton className="h-12 w-32 bg-white/20" />
+  // Skeleton only for data sections, static UI renders immediately
+  const StatsGridSkeleton = () => (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {[0, 1, 2, 3].map((i) => (
+        <div 
+          key={i} 
+          className="rounded-2xl p-4 sm:p-5 bg-card border border-border/50 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          style={{ animationDelay: `${i * 50}ms` }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-16 sm:w-20" />
+              <Skeleton className="h-7 sm:h-8 w-12 sm:w-16" />
             </div>
+            <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
           </div>
         </div>
+      ))}
+    </div>
+  );
 
-        {/* Stats Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-lg" />
-          ))}
-        </div>
-
-        {/* Bento Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Skeleton className="h-96 rounded-2xl" />
+  const ContentSkeleton = () => (
+    <>
+      {/* Bento Grid Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 rounded-2xl bg-card border border-border/50 p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms' }}>
+          <Skeleton className="h-5 sm:h-6 w-32 sm:w-40 mb-4" />
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32 sm:w-48" />
+                  <Skeleton className="h-3 w-24 sm:w-32" />
+                </div>
+                <Skeleton className="h-5 sm:h-6 w-14 sm:w-16 rounded-full" />
+              </div>
+            ))}
           </div>
-          <div className="lg:col-span-1">
-            <Skeleton className="h-96 rounded-2xl" />
-          </div>
         </div>
-
-        {/* Bottom Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-80 rounded-2xl" />
-          ))}
+        <div className="rounded-2xl bg-card border border-border/50 p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms' }}>
+          <Skeleton className="h-5 sm:h-6 w-28 sm:w-36 mb-4" />
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 p-2">
+                <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-20 sm:w-28" />
+                  <Skeleton className="h-3 w-16 sm:w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    );
-  }
+
+      {/* Bottom Grid Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {[0, 1, 2, 3].map((i) => (
+          <div 
+            key={i} 
+            className="rounded-2xl bg-card border border-border/50 p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
+            style={{ animationDelay: `${250 + i * 50}ms` }}
+          >
+            <Skeleton className="h-4 sm:h-5 w-24 sm:w-32 mb-3 sm:mb-4" />
+            <div className="space-y-2 sm:space-y-3">
+              {[0, 1, 2].map((j) => (
+                <div key={j} className="p-2 sm:p-3 bg-muted/30 rounded-lg">
+                  <Skeleton className="h-3 sm:h-4 w-full mb-1 sm:mb-2" />
+                  <Skeleton className="h-2 sm:h-3 w-2/3" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Hero Section */}
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Hero Section - Always shown */}
       <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-4 sm:p-6 md:p-8 text-white">
         <div className="relative z-10">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">
@@ -293,45 +364,55 @@ export default function Dashboard() {
         <div className="absolute bottom-0 left-0 w-24 sm:w-36 md:w-48 h-24 sm:h-36 md:h-48 bg-white/5 rounded-full translate-y-12 sm:translate-y-18 md:translate-y-24 -translate-x-12 sm:-translate-x-18 md:-translate-x-24"></div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="stats-card-orange">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stats-card-label">Total Alumni</p>
-              <p className="stats-card-number">{stats.totalAlumni.toLocaleString()}</p>
+      {/* Stats Grid - Show skeleton or data */}
+      {loading ? (
+        <StatsGridSkeleton />
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="stats-card-orange">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="stats-card-label">Total Alumni</p>
+                <p className="stats-card-number">{stats.totalAlumni.toLocaleString()}</p>
+              </div>
+              <Users className="stats-card-icon" />
             </div>
-            <Users className="stats-card-icon" />
+          </div>
+          <div className="stats-card-blue">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="stats-card-label">Active Events</p>
+                <p className="stats-card-number">{stats.activeEvents}</p>
+              </div>
+              <Calendar className="stats-card-icon" />
+            </div>
+          </div>
+          <div className="stats-card-teal">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="stats-card-label">Total Events</p>
+                <p className="stats-card-number">{stats.totalEvents}</p>
+              </div>
+              <Briefcase className="stats-card-icon" />
+            </div>
+          </div>
+          <div className="stats-card-pink">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="stats-card-label">Donations</p>
+                <p className="stats-card-number">{stats.totalDonations}</p>
+              </div>
+              <Heart className="stats-card-icon" />
+            </div>
           </div>
         </div>
-        <div className="stats-card-blue">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stats-card-label">Active Events</p>
-              <p className="stats-card-number">{stats.activeEvents}</p>
-            </div>
-            <Calendar className="stats-card-icon" />
-          </div>
-        </div>
-        <div className="stats-card-teal">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stats-card-label">Total Events</p>
-              <p className="stats-card-number">{stats.totalEvents}</p>
-            </div>
-            <Briefcase className="stats-card-icon" />
-          </div>
-        </div>
-        <div className="stats-card-pink">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stats-card-label">Donations</p>
-              <p className="stats-card-number">{stats.totalDonations}</p>
-            </div>
-            <Heart className="stats-card-icon" />
-          </div>
-        </div>
-      </div>
+      )}
+
+      {/* Content - Show skeleton or data */}
+      {loading ? (
+        <ContentSkeleton />
+      ) : (
+        <>
 
       {/* Bento Grid - Fixed Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -628,6 +709,8 @@ export default function Dashboard() {
           </div>
         </BentoCard>
       </div>
+      </>
+      )}
     </div>
   );
 }

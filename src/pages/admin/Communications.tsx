@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Send, Users, MessageSquare, Bell, TrendingUp, Eye, Calendar, Briefcase, Heart, Megaphone } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Mail, Send, Users, MessageSquare, Bell, TrendingUp, Eye, Calendar, Briefcase, Heart, Megaphone, Loader2 } from "lucide-react";
 import { emailService, adminService, notificationService, eventService, jobService, donationService } from "@/services/ApiServices";
 import { toast } from "sonner";
 
@@ -371,6 +372,40 @@ export function Communications() {
     fetchEmailHistory();
     fetchRecentEventsAndJobs();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48 bg-muted/60" />
+          <Skeleton className="h-4 w-80 bg-muted/60" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-2xl p-4 bg-card/50 border border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-3">
+                  <Skeleton className="h-3 w-20 bg-muted/60" />
+                  <Skeleton className="h-8 w-16 bg-muted/60" />
+                </div>
+                <Skeleton className="h-10 w-10 rounded-xl bg-muted/60" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-2xl bg-card/50 border border-border/50 p-6 space-y-4">
+              <Skeleton className="h-12 w-12 rounded-xl bg-muted/60" />
+              <Skeleton className="h-5 w-32 bg-muted/60" />
+              <Skeleton className="h-20 w-full rounded-lg bg-muted/60" />
+              <Skeleton className="h-10 w-full rounded-lg bg-muted/60" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">

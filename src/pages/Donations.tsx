@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { donationService } from '@/services/ApiServices';
 import { toast } from 'sonner';
 import { Heart, Target, TrendingUp, Loader2, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { cache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
 
 interface DonationCampaign {
   _id: string;
@@ -34,11 +35,20 @@ export default function Donations() {
 
   const fetchCampaigns = async () => {
     try {
+      // Check cache first
+      const cachedCampaigns = cache.get<DonationCampaign[]>(CACHE_KEYS.USER_DONATIONS);
+      if (cachedCampaigns) {
+        setCampaigns(cachedCampaigns);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const response = await donationService.getCampaigns();
       
       if (response.success) {
         setCampaigns(response.data);
+        cache.set(CACHE_KEYS.USER_DONATIONS, response.data, CACHE_TTL.MEDIUM);
       } else {
         toast.error(response.message || 'Failed to fetch donation campaigns');
       }
@@ -206,29 +216,47 @@ export default function Donations() {
     </div>
   );
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <Skeleton className="h-10 w-64 mb-6" />
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
-          ))}
+  // Data-only skeleton - static UI renders immediately
+  const CampaignCardsSkeleton = () => (
+    <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <div 
+          key={i} 
+          className="rounded-2xl bg-card border border-border/50 p-4 sm:p-5 space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300"
+          style={{ animationDelay: `${i * 40}ms` }}
+        >
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4 sm:h-5 sm:w-5 rounded" />
+            <Skeleton className="h-4 sm:h-5 w-32 sm:w-40" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Skeleton className="h-3 sm:h-4 w-16 sm:w-20" />
+              <Skeleton className="h-3 sm:h-4 w-20 sm:w-24" />
+            </div>
+            <Skeleton className="h-2 w-full rounded-full" />
+            <Skeleton className="h-2.5 sm:h-3 w-12 sm:w-16" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {[0, 1].map((j) => (
+              <div key={j} className="flex items-center gap-2">
+                <Skeleton className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded" />
+                <div className="space-y-1">
+                  <Skeleton className="h-2.5 sm:h-3 w-10 sm:w-14" />
+                  <Skeleton className="h-3 sm:h-4 w-12 sm:w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <Skeleton className="h-9 sm:h-10 w-full rounded-lg" />
         </div>
-      </div>
-    );
-  }
+      ))}
+    </div>
+  );
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Header - Always visible */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Donation Campaigns</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Support causes that matter to our community</p>
@@ -238,17 +266,19 @@ export default function Donations() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Heart className="h-5 w-5 text-red-500" />
-          <h2 className="text-xl font-semibold text-foreground">
-            Active Donations ({activeCampaigns.length})
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+            Active Donations {!loading && `(${activeCampaigns.length})`}
           </h2>
         </div>
 
-        {activeCampaigns.length === 0 ? (
+        {loading ? (
+          <CampaignCardsSkeleton />
+        ) : activeCampaigns.length === 0 ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Heart className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Active Campaigns</h3>
-              <p className="text-muted-foreground text-center">Check back later for new donation opportunities</p>
+            <CardContent className="flex flex-col items-center justify-center py-10 sm:py-12">
+              <Heart className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold mb-2">No Active Campaigns</h3>
+              <p className="text-sm text-muted-foreground text-center">Check back later for new donation opportunities</p>
             </CardContent>
           </Card>
         ) : (
@@ -270,41 +300,43 @@ export default function Donations() {
         )}
       </div>
 
-      {/* Completed Donations Section */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <CheckCircle className="h-5 w-5 text-emerald-500" />
-          <h2 className="text-xl font-semibold text-foreground">
-            Completed Donations ({completedCampaigns.length})
-          </h2>
-        </div>
+      {/* Completed Donations Section - Only show when data is loaded */}
+      {!loading && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle className="h-5 w-5 text-emerald-500" />
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+              Completed Donations ({completedCampaigns.length})
+            </h2>
+          </div>
 
-        {completedCampaigns.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <CheckCircle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Completed Campaigns</h3>
-              <p className="text-muted-foreground text-center">Completed campaigns will appear here</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {paginatedCompletedCampaigns.map((campaign) => (
-                <CampaignCard key={campaign._id} campaign={campaign} isCompleted />
-              ))}
-            </div>
-            {completedTotalPages > 1 && (
-              <PaginationControls
-                currentPage={completedPage}
-                totalPages={completedTotalPages}
-                onPrevious={() => setCompletedPage(p => Math.max(0, p - 1))}
-                onNext={() => setCompletedPage(p => Math.min(completedTotalPages - 1, p + 1))}
-              />
-            )}
-          </>
-        )}
-      </div>
+          {completedCampaigns.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-10 sm:py-12">
+                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold mb-2">No Completed Campaigns</h3>
+                <p className="text-sm text-muted-foreground text-center">Completed campaigns will appear here</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {paginatedCompletedCampaigns.map((campaign) => (
+                  <CampaignCard key={campaign._id} campaign={campaign} isCompleted />
+                ))}
+              </div>
+              {completedTotalPages > 1 && (
+                <PaginationControls
+                  currentPage={completedPage}
+                  totalPages={completedTotalPages}
+                  onPrevious={() => setCompletedPage(p => Math.max(0, p - 1))}
+                  onNext={() => setCompletedPage(p => Math.min(completedTotalPages - 1, p + 1))}
+                />
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Contribution Dialog */}
       <Dialog open={contributeDialogOpen} onOpenChange={setContributeDialogOpen}>

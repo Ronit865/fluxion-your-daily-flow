@@ -267,73 +267,81 @@
     border-color: #5227FF;
   }
 
-  /* Modern Bento Stats Cards - Solid Vibrant Pastels */
+  /* Modern Bento Stats Cards - Solid Vibrant Pastels with forced specificity */
   
   /* Vibrant Blue Stats Card */
   .stats-card-blue {
-    background: #B8D4FF;
-    color: #1a365d;
-    padding: 1.25rem;
-    border-radius: 1.5rem;
+    background: #B8D4FF !important;
+    color: #1a365d !important;
+    padding: 1.25rem !important;
+    border-radius: 1.5rem !important;
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.15);
   }
   
   .stats-card-blue:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.25);
   }
 
   /* Vibrant Green Stats Card */
   .stats-card-orange {
-    background: #A8E6CF;
-    color: #14532d;
-    padding: 1.25rem;
-    border-radius: 1.5rem;
+    background: #A8E6CF !important;
+    color: #14532d !important;
+    padding: 1.25rem !important;
+    border-radius: 1.5rem !important;
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 12px -2px rgba(5, 150, 105, 0.15);
   }
   
   .stats-card-orange:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.25);
   }
 
   /* Vibrant Lavender/Purple Stats Card */
   .stats-card-teal {
-    background: #D4BBFF;
-    color: #4c1d95;
-    padding: 1.25rem;
-    border-radius: 1.5rem;
+    background: #D4BBFF !important;
+    color: #4c1d95 !important;
+    padding: 1.25rem !important;
+    border-radius: 1.5rem !important;
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 12px -2px rgba(124, 58, 237, 0.15);
   }
   
   .stats-card-teal:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.25);
   }
 
   /* Vibrant Rose/Pink Stats Card */
   .stats-card-pink {
-    background: #FFB8C6;
-    color: #881337;
-    padding: 1.25rem;
-    border-radius: 1.5rem;
+    background: #FFB8C6 !important;
+    color: #881337 !important;
+    padding: 1.25rem !important;
+    border-radius: 1.5rem !important;
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 12px -2px rgba(225, 29, 72, 0.15);
   }
   
   .stats-card-pink:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(225, 29, 72, 0.25);
   }
 
   /* Stats Card Text Styles - Refined Typography */
   .stats-card-number {
-    font-size: 1.875rem;
-    font-weight: 700;
-    line-height: 1;
+    font-size: 1.875rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
     margin-bottom: 0.125rem;
     position: relative;
     z-index: 1;
@@ -342,13 +350,13 @@
   
   @media (min-width: 640px) {
     .stats-card-number {
-      font-size: 2.25rem;
+      font-size: 2.25rem !important;
     }
   }
   
   .stats-card-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
+    font-size: 0.6875rem !important;
+    font-weight: 600 !important;
     opacity: 0.75;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -358,13 +366,13 @@
   
   @media (min-width: 640px) {
     .stats-card-label {
-      font-size: 0.75rem;
+      font-size: 0.75rem !important;
     }
   }
   
   .stats-card-icon {
-    width: 2rem;
-    height: 2rem;
+    width: 2rem !important;
+    height: 2rem !important;
     opacity: 0.35;
     z-index: 1;
     flex-shrink: 0;
@@ -372,30 +380,34 @@
   
   @media (min-width: 640px) {
     .stats-card-icon {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 2.25rem !important;
+      height: 2.25rem !important;
     }
   }
 
-  /* Dark mode stats cards - Solid pastels for dark */
+  /* Dark mode stats cards - Solid pastels for dark with forced specificity */
   .dark .stats-card-blue {
-    background: #2563eb;
-    color: #dbeafe;
+    background: #2563eb !important;
+    color: #dbeafe !important;
+    box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.3);
   }
   
   .dark .stats-card-orange {
-    background: #059669;
-    color: #d1fae5;
+    background: #059669 !important;
+    color: #d1fae5 !important;
+    box-shadow: 0 4px 12px -2px rgba(5, 150, 105, 0.3);
   }
   
   .dark .stats-card-teal {
-    background: #7c3aed;
-    color: #ede9fe;
+    background: #7c3aed !important;
+    color: #ede9fe !important;
+    box-shadow: 0 4px 12px -2px rgba(124, 58, 237, 0.3);
   }
   
   .dark .stats-card-pink {
-    background: #e11d48;
-    color: #ffe4e6;
+    background: #e11d48 !important;
+    color: #ffe4e6 !important;
+    box-shadow: 0 4px 12px -2px rgba(225, 29, 72, 0.3);
   }
 
   /* Modern List Card Styling */
@@ -457,5 +469,15 @@
   
   .dark .highlight-border {
     border-color: #5227FF;
+  }
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }

@@ -103,8 +103,6 @@ export default function Settings() {
         profileData.linkedinUrl = linkedinUrl.trim();
       }
 
-      console.log('Sending profile data:', profileData); // Debug log
-
       const response = await userService.updateProfile(profileData);
       
       if (response.success) {
@@ -117,7 +115,6 @@ export default function Settings() {
         await fetchCurrentUser();
       }
     } catch (error: any) {
-      console.error('Profile update error:', error); // Debug log
       const apiError = handleApiError(error);
       toast({
         title: "Update Failed",
